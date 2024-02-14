@@ -1,8 +1,21 @@
-InfraDon 1
+<!-- ![HEIG-VD](https://heig-vd.ch/images/heig-vd-logo.gif)<br> -->
+Cours InfraDon 1
 =
+
+Le cours **Infrastructures de données** s'articule en 15 sessions de 4 periodes.
+- [Détail des sessions](https://github.com/damiencorpataux/infradon1/wiki)
+- [Questions & Réponses](https://github.com/damiencorpataux/infradon1/issues) ?
+
+Le support pour la partie pratique est dans ce dépôt git, organisé en 3 répertoires:
+- [infra/](infra/) - Infrastructure logicielle (docker)
+- [data/](data/) - Jeux de données d'exemple
+- [doc/](doc/) - Documentation connexe: Manuels, livres, descriptifs de cours, etc.
+
+---
 
 1: Introduction et infrastructure
 -
+- Présentation des **SGBD (DBMS) et PostgreSQL**
 - Introduction à **Linux**
 - Introduction à la **Command Line Interface (CLI)**
 - Installation de **Docker**
@@ -24,7 +37,7 @@ InfraDon 1
 
 4: Structure de données (1)
 -
-- Présentation de la typologie: **serveur, bases de données, schémas, tables, colonnes**
+- Présentation de la typologie de stockage: **serveur, bases de données, schémas, tables, colonnes**
 - Commandes SQL agissant sur la structure: **CREATE, ALTER, DROP**
 
 5: Manipulation des données et requêtes
@@ -54,6 +67,7 @@ InfraDon 1
 
 9: Intégrité des données (1)
 -
+- Intégrité référentielle et clés étrangères (FKeys)
 - Les **contraintes de colonnes**
 - Les **contraintes de tables**
 
