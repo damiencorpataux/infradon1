@@ -76,3 +76,19 @@ docker compose up -d
 ```
 
 <br>[![asciicast](https://asciinema.org/a/Rir5OQ6SfiTiSb2MYSJr2rSl8.svg)](https://asciinema.org/a/Rir5OQ6SfiTiSb2MYSJr2rSl8)
+
+
+Population du jeu de données d'exemple
+-
+Il s'agit d'importer le jeu de données fourni dans le répertoire [/data](/data).
+
+1. Télécharger et dézipper le fichier `dvdrental.zip` depuis le répertoire data de ce dépôt github [/data](/data)
+   <br>Il s'agit d'un *export* PostgreSQL.
+
+1. Importer les données dans l'*environnement de développement (docker)* en suivant le tutoriel CLI sur https://www.postgresqltutorial.com/postgresql-getting-started/load-postgresql-sample-database/
+
+1. Expérimenter des requêtes SQL de bases, tips: https://www.postgresqltutorial.com/postgresql-tutorial/postgresql-select/
+
+1. Importer les données dans l'*environnement de production* - quel paramètre change par rapport à l'import dans l'*environnement de développement* ?
+
+[![asciicast](https://asciinema.org/a/EVZs5veCbKuXhTlbAKkONR0EA.svg)](https://asciinema.org/a/EVZs5veCbKuXhTlbAKkONR0EA)
