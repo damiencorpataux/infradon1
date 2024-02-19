@@ -1,7 +1,7 @@
 Infrastructure
 =
 
-Le rôle d'une *infrastructure* est de mettre à disposition un ou plusieurs *services*. Ici, une *base de donnée relationnelle* disponible sur le port 5432 (et 5433 pour l'*environnement de développement*).
+Le rôle d'une *infrastructure* est de mettre à disposition un ou plusieurs *services*. Ici, une *base de donnée relationnelle* disponible sur le port 5432 pour l'*environnement de développement* (et 5433 pour l'*environnement de production*).
 
 Le service est ensuite consommé par un ou plusieurs *clients*, par exemple une *application web*, ou un *client CLI* comme `psql`.
 
@@ -31,7 +31,7 @@ PostgreSQL sous forme de container Docker. Il permet de monter rapidement sur vo
 1. Shutdown le serveur: appuyer sur les touches `ctrl`+`c`.
 
 Configuration:
-- Port: `5432` (port postgres standard)
+- Port: `5433` (port postgres non-standard)
 
 
 Serveur Local (développement)
@@ -41,7 +41,7 @@ PostgreSQL sous forme de serveur installé en local sur votre machine. Il sert d
 1. Installer PostgreSQL en local: https://www.postgresql.org/download/
 
 Configuration:
-- Port: `5433` (port non-standard)
+- Port: `5432` (port postgres standard)
 
 
 Client PostgreSQL
@@ -53,6 +53,21 @@ Utilisé pour se connecter au serveurs de développement et de production, le cl
 Configuration du client GUI:
 - Créer une connexion vers le serveur de développement, quel host et port ?
 - Créer une connexion vers le serveur de production, quel host et port ?
+
+Utiliser `psql` pour se connecter à une base de données:
+- `psql --help`: aide à propos de la commande
+- `psql -h localhost -p 5432 -U postgres postgres`: se connecter à la base de données nommée `postgres` serveur PostgreSQL écoutant sur le port `5432` de la machine `localhost` avec l'utilisateur `postgres`. Une connection réussi vous affiche l'invite de commande psql:
+  ```
+  psql (16.2)
+  Type "help" for help.
+
+  postgres=# 
+  ```
+
+Utiliser l'invite *psql*:
+- `help`: afficher l'aide générale
+- `\?`: affiche les commandes propres au moteur postgres
+- `\h`: affiche les commandes SQL disponibles
 
 Exemple d'utilisation de `psql`:
 <br>[![asciicast](https://asciinema.org/a/v1RtQbVwJkiGylTLUhpGnFBkf.svg)](https://asciinema.org/a/v1RtQbVwJkiGylTLUhpGnFBkf)
@@ -92,3 +107,10 @@ Il s'agit d'importer le jeu de données fourni dans le répertoire [/data](/data
 1. Importer les données dans l'*environnement de production* - quel paramètre change par rapport à l'import dans l'*environnement de développement* ?
 
 [![asciicast](https://asciinema.org/a/EVZs5veCbKuXhTlbAKkONR0EA.svg)](https://asciinema.org/a/EVZs5veCbKuXhTlbAKkONR0EA)
+
+
+Notre infrastructure système
+-
+Après avoir suivi les étapes ci-dessus pour la mise en place de PostgreSQL dans 2 environnements, nous avons l'architecture suivante pour notre infrastructure de données:
+
+![Notre architecture système](../../infradon1.wiki/img/notre-achitecture-systeme.drawio.png)
