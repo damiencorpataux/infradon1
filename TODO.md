@@ -1,0 +1,1 @@
+- Explain how to find app shortcut to pgAdmin4 on Windows and MacOS
