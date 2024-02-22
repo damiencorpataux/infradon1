@@ -5,7 +5,7 @@ Le rôle d'une *infrastructure* est de mettre à disposition un ou plusieurs *se
 
 Le service est ensuite consommé par un ou plusieurs *clients*, par exemple une *application web*, ou un *client CLI* comme `psql`.
 
-Dans notre use case, nous créons une *infrastructure* fournissant un *service de gestion de données relationnelles (SGBD)*. Ce service est assuré par un serveur PostgreSQL. 2 environnements...
+Dans notre use case, nous créons une *infrastructure* fournissant un *service de gestion de données relationnelles (SGBDR)*. Ce service est assuré par un serveur PostgreSQL. 2 environnements...
 
 Serveur `pingouin` (production)
 -
