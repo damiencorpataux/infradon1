@@ -11,9 +11,6 @@ Serveur `pingouin` (production)
 -
 Ce serveur est désactivé momentanément. Nous utiliserons un *serveur de production* sous forme de *container Docker* que nous pouvons migrer par la suite sur `pingouin.heig-vd.ch`.
 
-En attendant, nous avons recours à un serveur de teste non backupé ni sécurisé. N'y placez aucune donnée sensible:
-- `134.209.192.104`
-
 
 Installation du Serveur PostgreSQL (en local)
 -
@@ -62,10 +59,13 @@ Vous avez plusieurs moyens d'entrer dans un CLI Linux (bash):
 
 - Via SSH (SecureShell), un *serveur de terminal* permettant de se connecter à distance à une machine Linux:
   ```
-  ssh student@134.209.192.104
+  ssh <username-aai>@pingouin.heig-vd.ch
   ```
-  Note: `134.209.192.104` est l'IP d'un serveur de tests mis en place pour vos expérimentations.
-  [![asciicast](https://asciinema.org/a/9ETlED4CMHsxa6R9s3mfVyg2B.svg)](https://asciinema.org/a/9ETlED4CMHsxa6R9s3mfVyg2B)
+  Remplacez `<username-aai>` par votre nom d'utilisateur AAI, par exemple: `damien.corpatau`
+
+  Voici ce que cela donne:
+  <br>[![asciicast](https://asciinema.org/a/9ETlED4CMHsxa6R9s3mfVyg2B.svg)](https://asciinema.org/a/9ETlED4CMHsxa6R9s3mfVyg2B)
+
 <!--
 - Via un container Linux tournant sous Docker, en exécutant cette commande dans un terminal, après être entré dans votre *répertoire de travail*:
   ```sh
@@ -90,37 +90,48 @@ Vous avez plusieurs moyens d'entrer dans un CLI Linux (bash):
 Clients PostgreSQL
 -
 Utilisé pour se connecter aux serveurs PostgreSQL, le client PostgreSQL permet d'interagir avec la base de données pour toutes les manipulation de maintenance, de tests et d'apprentissage.
+- Les clients CLI et GUI sont installés avec l'installation du [Serveur PostgreSQL](#installation-du-serveur-postgresql-en-local)
 
-1. Les clients CLI et GUI sont installés avec l'installation du [Serveur PostgreSQL](#installation-du-serveur-postgresql-en-local)
+Nous voulons maintenant nous connecter une base de données avec les clients PostgreSQL.
 
-Configuration du client GUI:
+Avec le client GUI ([pgAdmin4](https://www.pgadmin.org/)):
 - Créer une connexion vers le serveur de développement, quel host et port ?
 - Créer une connexion vers le serveur de production, quel host et port ?
 
-Utiliser `psql` pour se connecter à une base de données:
+Avec le client CLI ([`psql`](https://docs.postgresql.fr/13/app-psql.html)):
 - Lancez un terminal
 - Tapez `psql --help` pour une aide à propos de la commande
-- `psql -h <hostname> -p <port> -U <username> <database>`: se connecter à la base de données nommée `postgres` serveur PostgreSQL écoutant sur le port `5432` de la machine `localhost` avec l'utilisateur `postgres`. Une connection réussi vous affiche l'invite de commande psql:
+- Pour se connecter voici la définition de la commande à utiliser:
+  ```
+  psql -h <hostname> -p <port> -U <username> <database>`
+  ```
+  Dans cette commande, remplacez...
+  - `<hostname>` par l'IP ou *le nom d'hôte* du serveur PostgreSQL auquel vous voulez vous connecter. Par exemple: `localhost` ou `pingouin.heig-vd.ch` (notre serveur de production)
+  - `<port>` par le port sur lequel vous voulez vous connecter (rappel port +ip = socket)
+  - `<username>` par le nom d'utilisateur avec lequel vous souhaitez vous connecter
+  - `<database>` par le nom de la base de données à laquelle vous voulez vous connecter
+  - Le mot de passe vous est demandé ensuite, il est normal que vous ne voyiez rien quand vous tapez.
+
+  Par exemple, pour se connecter à la base de données nommée `postgres` serveur PostgreSQL écoutant sur le port `5432` de la machine `localhost` avec l'utilisateur `postgres`:
+  ```
+  psql -h localhost -p 5432 -U postgres postgres
+  ```
+  Une connection réussie vous affiche l'invite de commande psql:
   ```
   psql (16.2)
   Type "help" for help.
 
   postgres=# 
   ```
-  Remplacez:
-  - `<hostname>` par l'IP ou *le nom d'hôte* du serveur PostgreSQL auquel vous voulez vous connecter. Par exemple: `localhost` ou `134.209.192.104` (le serveur de tests)
-  - `<port>` par le port sur lequel vous voulez vous connecter (rappel port +ip = socket)
-  - `<username>` par le nom d'utilisateur avec lequel vous souhaitez vous connecter
-  - `<database>` par le nom de la base de données à laquelle vous voulez vous connecter
-  - Le mot de passe vous est demandé ensuite, il est normal que vous ne voyiez rien quand vous tapez.
+  Vous pouvez maintenant tapper vos requêtes SQL et les commandes spéciales (commenceant par `\`).
 
 Utiliser l'invite `psql`:
-- `help`: afficher l'aide générale
-- `\?`: affiche les commandes propres au moteur postgres
-- `\h`: affiche les commandes SQL disponibles
+- `help`: afficher l'aide générale (très verbeux)
+- `\?`: affiche les commandes propres au moteur postgres (plus concis et très technique)
+- `\h`: affiche les commandes SQL disponibles (également)
 
-Exemple d'utilisation de `psql`:
-<br>[![asciicast](https://asciinema.org/a/v1RtQbVwJkiGylTLUhpGnFBkf.svg)](https://asciinema.org/a/v1RtQbVwJkiGylTLUhpGnFBkf)
+  Exemple d'utilisation de `psql`:
+  <br>[![asciicast](https://asciinema.org/a/v1RtQbVwJkiGylTLUhpGnFBkf.svg)](https://asciinema.org/a/v1RtQbVwJkiGylTLUhpGnFBkf)
 
 
 Population du jeu de données d'exemple
