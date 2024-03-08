@@ -1,3 +1,6 @@
+-- Dans cet example, nous pouvons associer un type de relation primaire à un contact
+-- et pouvons aussi y associer des types de relation secondaires.
+
 \connect postgres
 DROP DATABASE contacts;
 
@@ -14,7 +17,7 @@ CREATE TABLE relationship (
 CREATE TABLE person (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    relationship_id INTEGER NOT NULL,
+    relationship_id INTEGER NOT NULL DEFAULT 1,
     CONSTRAINT fk_relationship_id FOREIGN KEY(relationship_id) REFERENCES relationship(id)
 );
 
@@ -34,19 +37,29 @@ INSERT INTO relationship (name) VALUES
     ('Friend');
 
 INSERT INTO person (name, relationship_id) VALUES ('Toto', 1);
+-- INSERT INTO person (name) VALUES ('Titi');
+INSERT INTO rel_secondaryrelationships (person_id, relationship_id) VALUES
+    (1, 2),
+    (1, 3);
 
 
--- Queries
+-- Query: List persons and the primary relationship that we are entertaining with them
 SELECT * FROM person, relationship WHERE person.relationship_id = relationship.id;
 
 SELECT * FROM person
     JOIN relationship ON person.relationship_id = relationship.id;
 
+-- Note: La preuve que les requêtes avec JOIN ou WHERE ci-dessus sont identiques:
+-- derrière chaque requête, le moteur fait exactement la même chose.
+-- En fait, lorsqu'il traite la requête, il commence par transformer les clauses JOIN
+-- pour en faire des clauses WHERE !
+EXPLAIN SELECT * FROM person, relationship WHERE person.relationship_id = relationship.id;
 
-INSERT INTO rel_secondaryrelationships (person_id, relationship_id) VALUES
-    (1, 2),
-    (1, 3);
+EXPLAIN SELECT * FROM person
+    JOIN relationship ON person.relationship_id = relationship.id;
 
+
+-- Query: List persons and the secondary relationships that we are entertaining with them
 SELECT * FROM person, relationship, rel_secondaryrelationships
 WHERE
     rel_secondaryrelationships.person_id = person.id
