@@ -3,10 +3,14 @@ Cours InfraDon 1
 =
 
 Le cours **Infrastructures de données** s'articule en 15 sessions de 4 periodes.
-- [Support de cours](https://github.com/damiencorpataux/infradon1/wiki)
-- [Support pratique](infra/)
+- [Support de cours organisé par séances](https://github.com/damiencorpataux/infradon1/wiki)
+- [Support pratique pour les manipulations sur l'infrastructure](infra/)
+- [Les exemples](examples/)
 <!-- - [Questions & Réponses](https://github.com/damiencorpataux/infradon1/issues) ? -->
 
-Le support pour la partie pratique est dans ce dépôt git, organisé en 2 répertoires (qui vous seront présentés en cours):
+Le support pratique infrastructure se trouve dans les fichiers ici. Il organisé en plusieurs répertoires:
 - [infra/](infra/) - Infrastructure logicielle (docker)
-- [data/](data/) - Jeux de données d'exemple
+- [exemples/](exemples/) - Exemple pour pratiquer les aspects vus en cours
+- [data/](data/) - Jeux de données d'exemple (tutoriel)
+
+Les supports sont synthétiques pour rester évolutifs. Nous attendons de vous que vous identifiez les termes et mots-clés correspondant aux points d'articulation fondamentaux de la matière et d'utiliser votre capacité à trouver l'information pertinente. N'hésitez pas à poser toutes les questions sur la méthode !
