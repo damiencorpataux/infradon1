@@ -1,5 +1,5 @@
 --
--- goodmark.com - store and project your marks !
+-- goodmark.com - Goodmark stores and projects your Marks !
 --
 
 -- Structure: Database (dev purpose)
@@ -10,7 +10,7 @@ CREATE DATABASE goodmark;
 
 
 -- Structure: Tables
-CREATE TABLE weight_unit (
+CREATE TABLE mark_weight (
     id SERIAL PRIMARY KEY,
     symbol TEXT NOT NULL,
     name TEXT NOT NULL
@@ -40,14 +40,14 @@ CREATE TABLE mark (
     description TEXT,
     value NUMERIC NOT NULL,
     weight NUMERIC,
-    weight_unit_id INTEGER REFERENCES weight_unit(id),
+    mark_weight_id INTEGER REFERENCES mark_weight(id),
     period_id INTEGER REFERENCES period(id),  -- FIXME: Shall we relate period to `module` or `mark` ?
     module_id INTEGER REFERENCES module(id)
 );
 
 
 -- Data: Catalogs
-INSERT INTO weight_unit (symbol, name) VALUES
+INSERT INTO mark_weight (symbol, name) VALUES
     ('%', 'Percent (eg. 10%)'),
     ('*', 'Factor (eg. counts for 2 or 0.5)'),
     ('+', 'Addition (eg. 0.5 bonus)');
@@ -66,13 +66,13 @@ INSERT INTO unit (name, module_id) VALUES
 INSERT INTO period (name) VALUES
     ('2024, 1er semstre');
 
-INSERT INTO module (name) VALUES
-    ('Technologies de l''information');
+INSERT INTO module (name, ects) VALUES
+    ('Technologies de l''information', 5);
 
 INSERT INTO unit (name, module_id) VALUES
     ('Infrastructures de données', 2);
 
-INSERT INTO mark (name, value, weight, weight_unit_id, period_id, module_id) VALUES
+INSERT INTO mark (name, value, weight, mark_weight_id, period_id, module_id) VALUES
     ('Test 1', 5.4, 0.5, 2, 2, 2),
     ('Test 2', 4.8, 0.5, 2, 2, 2),
     ('Bonus', 0.4, NULL, 3, 2, 2);
@@ -88,9 +88,11 @@ CREATE VIEW view_marks AS
         unit.id AS unit_id,
         period.name AS period_name,
         module.name AS module_name,
+        module.ects AS module_ects,
         unit.name AS unit_name,
-        weight_unit.name AS weight_unit_name,
-        weight_unit.symbol AS weight_unit_symbol,
+        mark_weight.name AS mark_weight_name,
+        mark_weight.symbol AS mark_weight_symbol,
+        CONCAT(mark.weight, mark_weight.symbol, mark.value) AS mark_weight_full,
         mark.weight AS mark_weight,
         mark.value AS mark_value,
         mark.name AS mark_name
@@ -98,11 +100,11 @@ CREATE VIEW view_marks AS
         JOIN period ON period.id = mark.period_id
         JOIN module ON module.id = mark.module_id
         JOIN unit ON unit.module_id = module.id
-        JOIN weight_unit ON weight_unit.id = mark.weight_unit_id;
+        JOIN mark_weight ON mark_weight.id = mark.mark_weight_id;
 
 -- View: All marks with less coulumns
 CREATE VIEW view_marks_short AS
-    SELECT mark_id, period_name, module_name, unit_name, mark_weight, weight_unit_symbol, mark_value, mark_name
+    SELECT mark_id, period_name, module_name, unit_name, mark_weight, mark_weight_symbol, mark_value, mark_name
     FROM view_marks;
 
 -- Notes:
@@ -114,6 +116,7 @@ CREATE VIEW view_marks_short AS
 -- \pset format aligned
 
 -- -- Query: JSON Output
+-- -- https://stackoverflow.com/q/24006291/1300775
 -- WITH query AS
 -- (
 --     SELECT * FROM view_marks
@@ -123,11 +126,11 @@ CREATE VIEW view_marks_short AS
 
 -- TODO: Try to implement weighted average using SUM and CASE, as described here:
 -- https://stackoverflow.com/a/36652407/1300775
-SELECT mark_id, module_id, mark_weight, weight_unit_symbol, mark_value, mark_name FROM view_marks;
+SELECT mark_id, module_id, mark_weight, mark_weight_symbol, mark_value, mark_name FROM view_marks;
 
-SELECT  -- FIXME: Basic average that doesn't take weight_unit into acount
+SELECT  -- FIXME: Basic average that doesn't take mark_weight into acount
     module_id,
-    count(*),
+    COUNT(*),
     AVG(
         mark_value
     ) AS mark_count
@@ -136,10 +139,10 @@ GROUP BY module_id;
 
 SELECT  -- FIXME: I don't understant this behaviour.
     module_id,
-    count(*),
-    SUM(mark_value) FILTER (WHERE weight_unit_symbol = '+')
-    + AVG(mark_value) FILTER (WHERE weight_unit_symbol = '*')  -- FIXME: Take weight into account
-    + AVG(mark_value / 100) FILTER (WHERE weight_unit_symbol = '%')  -- FIXME: Same
+    COUNT(*),
+    SUM(mark_value) FILTER (WHERE mark_weight_symbol = '+')
+    + AVG(mark_value) FILTER (WHERE mark_weight_symbol = '*')  -- FIXME: Take weight into account
+    + AVG(mark_value / 100) FILTER (WHERE mark_weight_symbol = '%')  -- FIXME: Same
     AS mark_module
 FROM view_marks
 -- WHERE mark_id < 3  -- FIXME: This fails
@@ -154,10 +157,10 @@ CREATE OR REPLACE FUNCTION weighted_average_state(
     numeric, -- running total
     numeric, -- mark_value
     numeric, -- weight
-    text     -- weight_unit_symbol
+    text     -- mark_weight_symbol
 ) RETURNS numeric AS $$
 BEGIN
-    -- TODO: Should: When weight_unit_symbol = NULL, then compute the natural average (mark_value/number_of_marks)
+    -- TODO: Should: When mark_weight_symbol = NULL, then compute the natural average (mark_value/number_of_marks)
     IF $4 = '+' THEN
         RETURN $1 + $2; -- Add mark_value to the running total
     ELSIF $4 = '*' THEN
@@ -165,7 +168,7 @@ BEGIN
     ELSIF $4 = '%' THEN
         RETURN $1 + $2 / 100 * $3; -- Calculate percentage of mark_value, multiply by weight, and add to the running total
     ELSE
-        RETURN $1; -- If weight_unit_symbol is not recognized, return the running total unchanged
+        RETURN $1; -- If mark_weight_symbol is not recognized, return the running total unchanged
     END IF;
 END;
 $$ LANGUAGE plpgsql;
@@ -183,6 +186,29 @@ CREATE AGGREGATE weighted_average(numeric, numeric, text) (
     initcond = '0' -- Initial value for the running total
 );
 
-SELECT mark_id, module_id, mark_weight, weight_unit_symbol, mark_value, mark_name FROM view_marks;
-SELECT module_id, count(*), avg(mark_value) AS mark_count FROM view_marks GROUP BY module_id;
-SELECT module_id, count(*), weighted_average(mark_value, mark_weight, weight_unit_symbol) FROM view_marks WHERE mark_id < 3 GROUP BY module_id;
+CREATE VIEW view_marks_avg_per_module AS
+    SELECT
+        period_id,
+        module_id,
+        unit_id,
+        period_name,
+        module_name,
+        module_ects,
+        STRING_AGG(CONCAT(mark_weight, mark_weight_symbol, mark_value) , ' + ') AS mark_weights_full,
+        STRING_AGG(DISTINCT unit_name, ', ') AS unit_names,
+        COUNT(*) AS mark_count,
+        weighted_average(mark_value, mark_weight, mark_weight_symbol) AS mark_average
+    FROM view_marks
+    GROUP BY
+        period_id,
+        module_id,
+        unit_id,
+        period_name,
+        module_name,
+        module_ects;
+
+
+-- Query: For testing
+SELECT * FROM view_marks_avg_per_module;
+-- FIXME: Plain average, missing weights
+-- SELECT period_id, module_id, unit_id, period_name, module_name, unit_name, COUNT(*) AS mark_count, AVG(mark_value) AS mark_average FROM view_marks GROUP BY module_id, module_name;

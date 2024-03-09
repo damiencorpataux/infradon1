@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Good Mark</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            :root {
+               --brand: crimson;
+            }
+            .brand {
+                color: var(--brand);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container py-4 px-4 px-md-0">
+            <h1>
+                <i class="brand pe-auto" data-feather="book-open" stroke-width="2" width="32" height="32" style="position:relative; top: -3px; left:-3px"></i>
+                Good Mark!
+            </h1>
+            <p>
+                Store, Project & Scale up <strong>your marks.</strong>
+            </p>
+            <hr class="my-4">
+
+            <h2 class="h3">All Marks</h2>
+            <goodmark-marks></goodmark-marks>
+            <br>
+
+            <h2 class="h3">Marks Averages</h2>
+            <goodmark-marks-average></goodmark-marks-average>
+        </div>
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://unpkg.com/feather-icons"></script>
+        <script>feather.replace()</script>
+
+
+
+        <!-- 
+            WebComponents for Good Mark
+
+            Made with chatgpt: https://chat.openai.com/share/45ecf92f-3653-439a-820a-8c1af536252a
+        -->
+        <script>
+            /**
+             * Utility: Toolbox.
+             */
+             class GoodmarkUtility {
+                /**
+                 * Create and return a populated DOM Table object from data.
+                 */
+                static createTable(data, headerMapping) {
+                    const table = document.createElement('table');
+                    const thead = document.createElement('thead');
+                    const tbody = document.createElement('tbody');
+                    table.classList.add('table');
+                    table.appendChild(thead);
+                    table.appendChild(tbody);
+                    // Create table header
+                    const headerRow = document.createElement('tr');
+                    Object.keys(headerMapping).forEach(dbfield => {
+                        const displayField = headerMapping[dbfield];
+                        const th = document.createElement('th');
+                        th.textContent = displayField;
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+                    // Populate table body
+                    tbody.innerHTML = '';
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+                        Object.keys(headerMapping).forEach(dbfield => {
+                            const cell = document.createElement('td');
+                            cell.textContent = item[dbfield];
+                            row.appendChild(cell);
+                        });
+                        tbody.appendChild(row);
+                    });
+                    return table;
+                }
+
+                /**
+                 * Fetch API with retry.
+                 * https://stackoverflow.com/a/76140785/1300775
+                 */
+                static async fetchRetry(...args) {
+                    const MAX_NB_RETRY = 6;
+                    const RETRY_DELAY_MS = 333;
+                    let retryLeft = MAX_NB_RETRY;
+                    while (retryLeft > 0){
+                        try {
+                            console.info('Fetch retrying', MAX_NB_RETRY-retryLeft, `max ${MAX_NB_RETRY}*${RETRY_DELAY_MS}ms`, args);
+                            return await fetch(...args);
+                        }
+                        catch (error) { 
+                            console.log(error);
+                            await sleep(RETRY_DELAY_MS)
+                        }
+                        finally {
+                            retryLeft -= 1;
+                        }
+                    }
+                    throw new Error(`Too many retries (${MAX_NB_RETRY} * ${RETRY_DELAY_MS}ms)`);
+
+                    function sleep(delay){
+                        return new Promise((resolve) => setTimeout(resolve, delay));
+                    }
+                }
+            }
+
+            /**
+             * Base class for WebComponents.
+             */
+            class Goodmark extends HTMLElement {
+                constructor() {
+                    super();
+                    this.attachShadow({ mode: 'open' });
+                    this.shadowRoot.innerHTML = `
+                        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+                        <div id="ui">...Loading...</div>
+                    `;
+                    this.ui = this.shadowRoot.querySelector('#ui');
+                    this.api_path = null;
+                }
+
+                connectedCallback() {
+                    if (this.api_path) {
+                        this.fetchData();
+                    } else {
+                        console.error('Error no api_path defined. Please set `this.api = \'path\'` in component constructor');
+                    }
+                }
+
+                async fetchData() {
+                    const api_url = (this.getAttribute('api-url') || window.location.href).replace(/\/$/, '') + this.api_path; // Manage default url and append api path
+                    try {
+                        const response = await GoodmarkUtility.fetchRetry(api_url);
+                        // const response = await fetch(api_url);
+                        const data = await response.json();
+                        this.populateUI(data);
+                    } catch (error) {
+                        console.error('Error fetching data:', error);
+                    }
+                }
+
+                populateUI(data) {
+                    console.error('fetchData method not implemented');
+                }
+            }
+
+            /**
+             * WebComponent: Display table of marks.
+             */
+            class GoodmarkMarks extends Goodmark {
+                constructor() {
+                    super();
+                    this.api_path = '/api/marks';
+                }
+
+                populateUI(data) {
+                    const table_el = GoodmarkUtility.createTable(data, {
+                        'period_name': 'Academic Period',
+                        'module_name': 'Module',
+                        'unit_name': 'Module Unit',
+                        // 'mark_weight_name': 'Weight',
+                        // 'mark_weight_symbol': 'Weight Symbol',
+                        'mark_weight_full': 'Mark Weight',
+                        'mark_value': 'Mark Value',
+                        'mark_name': 'Mark Name'
+                    });
+                    this.ui.innerHTML = '';
+                    this.ui.appendChild(table_el);
+                }
+            }
+            customElements.define('goodmark-marks', GoodmarkMarks);
+
+            /**
+             * WebComponent: Display table of marks averages.
+             */
+            class GoodmarkMarksAverage extends Goodmark {
+                constructor() {
+                    super();
+                    this.api_path = '/api/marks/average';
+                }
+
+                populateUI(data) {
+
+                    const table_el = GoodmarkUtility.createTable(data, {
+                        'period_name': 'Academic Period',
+                        'module_name': 'Module',
+                        'module_ects': 'ECTS',
+                        'unit_names': 'Module Units',
+                        'mark_weights_full': 'Mark Weights',
+                        'mark_count': '# of Marks',
+                        'mark_average': 'Mark Average'
+                    });
+                    this.ui.innerHTML = '';
+                    this.ui.appendChild(table_el);
+                }
+            }
+            customElements.define('goodmark-marks-average', GoodmarkMarksAverage);
+
+        </script>
+    </body>
+</html>
