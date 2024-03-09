@@ -4,7 +4,7 @@
 # Description: Minimalistic web server in Bash and Zsh that listens for HTTP requests, executes a PostgreSQL command, and returns the result as an HTTP response.
 # Usage: Run the script using Bash or Zsh. Ensure that the 'psql' command is accessible from the environment.
 # Note: Replace 'http://localhost:8080/' with the desired listening address and port.
-# Made with chatgpt: https://chat.openai.com/share/c49d73a4-8598-4f35-8294-ab5dbb5db0c5
+# Authors: Damien Corpataux & ChatGPT: https://chat.openai.com/share/c49d73a4-8598-4f35-8294-ab5dbb5db0c5
 
 port=8080
 script_dir=$(dirname "$0")  # Script directory, to be used inside the sh spawned by --sh-exec
@@ -27,21 +27,21 @@ while true; do
 
         # Route HTTP Request
         if [ "$http_request_path" = "/" ]; then
-            echo "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n$(cat $script_dir/03-goodmark-web.html)"  # Return a static HTML file
+            echo "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n$(cat $script_dir/03-goodgrade-ui.html)"  # Return a static HTML file
         else
             case "$http_request_path" in
-                "/api/marks")
-                    sql="SELECT json_agg(to_json(view_marks)) FROM view_marks";
+                "/api/grades")
+                    sql="SELECT json_agg(to_json(view_grades)) FROM view_grades";
                     ;;
-                "/api/marks/average")
-                    sql="SELECT json_agg(to_json(view_marks_avg_per_module)) FROM view_marks_avg_per_module";
+                "/api/grades/average")
+                    sql="SELECT json_agg(to_json(view_grades_avg_per_module)) FROM view_grades_avg_per_module";
                     ;;
                 *)
                     sql="SELECT 404";
                     http_response_code=404;
                     ;;
             esac
-            http_response_body=$(psql -U postgres goodmark -tAc "${sql}");
+            http_response_body=$(psql -U postgres goodgrade -tAc "${sql}");
             echo "HTTP/1.1 ${http_response_code} OK\r\nContent-Type: application/json\r\n\r\n${http_response_body}"  # Return JSON from SQL Query
         fi
     '

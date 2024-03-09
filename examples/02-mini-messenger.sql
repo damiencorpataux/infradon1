@@ -21,7 +21,7 @@ CREATE TABLE contact (
 
 CREATE TABLE rel_message (
     id SERIAL PRIMARY KEY,
-    content TEXT NOT NULL UNIQUE,
+    content TEXT NOT NULL,
     contact_id_source INTEGER NOT NULL,
     contact_id_destination INTEGER NOT NULL,
     CONSTRAINT contact_id_source FOREIGN KEY(contact_id_source) REFERENCES contact(id),
@@ -60,8 +60,8 @@ INSERT INTO status (name) VALUES ('DND');
 INSERT INTO contact (name, status_id) VALUES ('Alice', 1);
 INSERT INTO contact (name, status_id) VALUES ('Bob', 1);
 
-INSERT INTO rel_message (contact_id_source, contact_id_destination) VALUES (1, 2);
-INSERT INTO rel_message (contact_id_source, contact_id_destination) VALUES (2, 1);
+INSERT INTO rel_message (contact_id_source, contact_id_destination, content) VALUES (1, 2, 'Ping ?');
+INSERT INTO rel_message (contact_id_source, contact_id_destination, content) VALUES (2, 1, 'Pong !');
 
 
 -- Sample queries

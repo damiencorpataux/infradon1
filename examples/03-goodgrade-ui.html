@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Good Mark</title>
+        <title>Good Grade</title>
+        <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             :root {
@@ -15,30 +16,42 @@
     <body>
         <div class="container py-4 px-4 px-md-0">
             <h1>
-                <i class="brand pe-auto" data-feather="book-open" stroke-width="2" width="32" height="32" style="position:relative; top: -3px; left:-3px"></i>
-                Good Mark!
+                <i class="brand pe-auto" data-feather="book-open" stroke-width="2" width="48" height="58" style="position:relative; top: -3px; left:-3px"></i>
+                Good Grade!
             </h1>
             <p>
-                Store, Project & Scale up <strong>your marks.</strong>
+                Store, Project & Scale up <strong>your grades.</strong>
             </p>
             <hr class="my-4">
 
-            <h2 class="h3">All Marks</h2>
-            <goodmark-marks></goodmark-marks>
-            <br>
+            <div class="ms-3">
+                <h2>Grades</h2>
+                <br>
 
-            <h2 class="h3">Marks Averages</h2>
-            <goodmark-marks-average></goodmark-marks-average>
+                <div class="ms-3">
+                    <h3>All</h2>
+                    <goodgrade-grades></goodgrade-grades>
+                    <br>
+
+                    <h3>Modules Averages</h2>
+                    <goodgrade-grades-average></goodgrade-grades-average>
+                </div>
+            </div>
+
+            <footer class="mt-4 small opacity-25 text-end">
+                © Damien Corpataux for unit
+                <a href="https://github.com/damiencorpataux/infradon1">InfraDon1</a>.
+            </footer>
         </div>
 
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
         <script src="https://unpkg.com/feather-icons"></script>
         <script>feather.replace()</script>
 
 
 
         <!-- 
-            WebComponents for Good Mark
+            WebComponents for Good Grade
 
             Made with chatgpt: https://chat.openai.com/share/45ecf92f-3653-439a-820a-8c1af536252a
         -->
@@ -46,7 +59,7 @@
             /**
              * Utility: Toolbox.
              */
-             class GoodmarkUtility {
+             class GoodgradeUtility {
                 /**
                  * Create and return a populated DOM Table object from data.
                  */
@@ -90,11 +103,11 @@
                     let retryLeft = MAX_NB_RETRY;
                     while (retryLeft > 0){
                         try {
-                            console.info('Fetch retrying', MAX_NB_RETRY-retryLeft, `max ${MAX_NB_RETRY}*${RETRY_DELAY_MS}ms`, args);
+                            console.info(`Fetching ${retryLeft<MAX_NB_RETRY ? ' retry' : ''}`, MAX_NB_RETRY-retryLeft, `max ${MAX_NB_RETRY}*${RETRY_DELAY_MS}ms`, args);
                             return await fetch(...args);
                         }
                         catch (error) { 
-                            console.log(error);
+                            if (!retryLeft) console.error(error);
                             await sleep(RETRY_DELAY_MS)
                         }
                         finally {
@@ -112,7 +125,7 @@
             /**
              * Base class for WebComponents.
              */
-            class Goodmark extends HTMLElement {
+            class Goodgrade extends HTMLElement {
                 constructor() {
                     super();
                     this.attachShadow({ mode: 'open' });
@@ -133,9 +146,9 @@
                 }
 
                 async fetchData() {
-                    const api_url = (this.getAttribute('api-url') || window.location.href).replace(/\/$/, '') + this.api_path; // Manage default url and append api path
+                    const api_url = (this.getAttribute('api-url') || window.location.href || 'http://localhost:8080').replace(/\/$/, '') + this.api_path; // Manage default url and append api path
                     try {
-                        const response = await GoodmarkUtility.fetchRetry(api_url);
+                        const response = await GoodgradeUtility.fetchRetry(api_url);
                         // const response = await fetch(api_url);
                         const data = await response.json();
                         this.populateUI(data);
@@ -150,56 +163,55 @@
             }
 
             /**
-             * WebComponent: Display table of marks.
+             * WebComponent: Display table of grades.
              */
-            class GoodmarkMarks extends Goodmark {
+            class GoodgradeGrades extends Goodgrade {
                 constructor() {
                     super();
-                    this.api_path = '/api/marks';
+                    this.api_path = '/api/grades';
                 }
 
                 populateUI(data) {
-                    const table_el = GoodmarkUtility.createTable(data, {
+                    const table_el = GoodgradeUtility.createTable(data, {
                         'period_name': 'Academic Period',
                         'module_name': 'Module',
                         'unit_name': 'Module Unit',
-                        // 'mark_weight_name': 'Weight',
-                        // 'mark_weight_symbol': 'Weight Symbol',
-                        'mark_weight_full': 'Mark Weight',
-                        'mark_value': 'Mark Value',
-                        'mark_name': 'Mark Name'
+                        // 'grade_weight_name': 'Weight',
+                        // 'grade_weight_symbol': 'Weight Symbol',
+                        'grade_name': 'Grade Name',
+                        'grade_weight_full': 'Grade Weight',
+                        'grade_value': 'Grade Value'
                     });
                     this.ui.innerHTML = '';
                     this.ui.appendChild(table_el);
                 }
             }
-            customElements.define('goodmark-marks', GoodmarkMarks);
+            customElements.define('goodgrade-grades', GoodgradeGrades);
 
             /**
-             * WebComponent: Display table of marks averages.
+             * WebComponent: Display table of grades averages.
              */
-            class GoodmarkMarksAverage extends Goodmark {
+            class GoodgradeGradesAverage extends Goodgrade {
                 constructor() {
                     super();
-                    this.api_path = '/api/marks/average';
+                    this.api_path = '/api/grades/average';
                 }
 
                 populateUI(data) {
-
-                    const table_el = GoodmarkUtility.createTable(data, {
+                    const table_el = GoodgradeUtility.createTable(data, {
                         'period_name': 'Academic Period',
                         'module_name': 'Module',
-                        'module_ects': 'ECTS',
                         'unit_names': 'Module Units',
-                        'mark_weights_full': 'Mark Weights',
-                        'mark_count': '# of Marks',
-                        'mark_average': 'Mark Average'
+                        'module_ects': 'ECTS',
+                        'grade_weights_full': 'Grade Weights',
+                        'grade_count': '# of Grades',
+                        'grade_average': 'Grade Average'
                     });
                     this.ui.innerHTML = '';
                     this.ui.appendChild(table_el);
                 }
             }
-            customElements.define('goodmark-marks-average', GoodmarkMarksAverage);
+            customElements.define('goodgrade-grades-average', GoodgradeGradesAverage);
 
         </script>
     </body>

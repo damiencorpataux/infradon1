@@ -1,8 +1,11 @@
 <#
+FIXME: Work in progress.
+
 Script: webserver.ps1
 Description: Minimalistic web server in PowerShell that listens for HTTP requests, executes a PostgreSQL command, and returns the result as an HTTP response.
 Usage: Run the script using PowerShell. Ensure that the 'psql' command is accessible from the PowerShell environment.
 Note: Replace 'http://localhost:8080/' with the desired listening address and port.
+Authors: Damien Corpataux & ChatGPT: https://chat.openai.com/share/c49d73a4-8598-4f35-8294-ab5dbb5db0c5
 #>
 
 $listener = New-Object System.Net.HttpListener
