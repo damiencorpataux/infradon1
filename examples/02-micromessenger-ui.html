@@ -35,8 +35,7 @@
             <div id="umessage-ui">
 
                 <div id="status" class="alert alert-info">
-                    <div class="spinner-border" role="status"></div>
-                    Loading...
+                    Hello 👋 ! Please log in.
                 </div>
 
                 <div class="row">
@@ -78,12 +77,11 @@
 
         <script>
             /**
-             * UI Setup & Controller
+             * UI Configuration, Setup & Initialisation
              * 
              * TODO: Use localStorage to remember current_user_id and out_contact.value across page-reloads.
              */
             const api_url = (window.location.href || 'http://localhost:8080').replace(/\/$/, '');
-            const current_user_id = 1;  // FIXME: Hardcoded
             const ui = {
                 contacts: document.querySelector('#contacts'),
                 out_contact: document.querySelector('#out-contact'),
@@ -93,47 +91,102 @@
                 current_user_displays: document.querySelectorAll('.current-user'),
                 status: document.querySelector('#status')
             };
+            let current_user_id = null;  // Note: The currently logged in user, this variable is usually set in login_user().
+            init();
 
-            // App initialisation
-            populate_all(true);
-            setInterval(populate_all, 3333);
-            ui.send_message.addEventListener('click', send_message);
-            ui.send_message.addEventListener('submit', send_message);
-            ui.out_message.focus();
-            // Iteration 2: Allow user to login (insecure, because real authentication)
-            // for (current_user_display of ui.current_user_displays) {
-            //     current_user_display.style.cursor = 'pointer';
-            //     current_user_display.style.textDecoration = 'underline';
-            //     current_user_display.addEventListener('click', login_user);
-            // }
-
-            // function login_user() {
-            //     const user_name = prompt('Who are you ? Enter your name...');
-            //     console.info('Logging in', user_name, '(todo)')
-            // }
-
-            function populate_all(notify) {
-                populate_contacts().then(() => {if (notify) set_status('Ready !', 'success')});
-                populate_messages().then(() => {if (notify) set_status('Ready !', 'success')});
+            /**
+             * App initialisation.
+             * 
+             * Populate contacts and messages, setup user-interaction logic, and logs in the user.
+             */
+            function init() {
+                populate_all();  // Initial population, triggers user login.
+                setInterval(() => {
+                    if (current_user_id) populate_all();  // Periodic re-population, to keep UI up-to-date with database (polling).
+                }, 3333);
+                ui.send_message.addEventListener('click', send_message);
+                ui.send_message.addEventListener('submit', send_message);
+                ui.out_message.focus();
+                // Iteration 2: Allow user to login (insecure, because real authentication)
+                // for (current_user_display of ui.current_user_displays) {
+                //     current_user_display.style.cursor = 'pointer';
+                //     current_user_display.style.textDecoration = 'underline';
+                //     current_user_display.addEventListener('click', login_user);
+                // }
             }
-            
+
+            /**
+             * Populate contacts and messages.
+             * 
+             * Asks for login if user is not yet logged in.
+             * This function is idempotent: calling it subsequently results in replaing the data in UI.
+             */
+             function populate_all() {
+                login_user()
+                    .then(() => populate_contacts())
+                    .then(() => populate_messages());
+                // populate_contacts().then(() => {if (notify) set_status('Ready !', 'success')});
+                // populate_messages().then(() => {if (notify) set_status('Ready !', 'success')});
+            }
+
+            async function login_user() {
+                while (!current_user_id) {
+                    set_status('Hello 👋 ! Please log in.', 'info');
+                    console.info('current_user_id', current_user_id);
+                    let user_name = null;
+                    while (!user_name) user_name = prompt('Who are you ? Enter your name...');
+                    console.info('Logging in', user_name);
+                    response = await fetchRetry(`${api_url}/api/contacts`, {
+                        method: 'GET'
+                    });
+                    const contacts = await response.json();
+                    console.info('Contacts', contacts);
+                    // Check if given name exists in contacts
+                    const remove_accents = str => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');  // Remove accents from string, see: https://www.30secondsofcode.org/js/s/remove-accents/
+                    const existing_contacts = contacts.filter((contact) => remove_accents(contact.name.toUpperCase()) == remove_accents(user_name.toUpperCase()));
+                    console.info('Found contacts', existing_contacts)
+                    if (existing_contacts.length < 1) {
+                        console.info('No user matching name', user_name);
+                        alert(`Sorry, we have no user with name: ${user_name}`);
+                    }
+                    if (existing_contacts.length > 1) {
+                        console.error('Multiple contacts existing in database with name', user_name, existing_contacts);
+                        const message = `We have a problem: there is ${existing_contacts.length} contacts matching name '${user_name}' in database (${existing_contacts.map(c => c.name).join(', ')})`;
+                        alert(message);
+                    }
+                    if (existing_contacts.length == 1) {
+                        set_status(`👋 Welcome <strong>${existing_contacts[0].name}<strong> !`, 'success');
+                        current_user_id = existing_contacts[0].id;  // Leaving with variable current_user_id set.
+                    }
+                }
+            }
+
+            /**
+             * Populate contacts list and dropdown.
+             * 
+             * This function is idempotent: calling it subsequently results in replaing the data in UI.
+             */
             function populate_contacts() {
+                if (!current_user_id) {
+                    set_status('Please login first !', 'warning');
+                    return;
+                }
                 // set_status('Refreshing contacts...', 'info', false);
                 return fetchRetry(`${api_url}/api/contacts`, {
                     method: 'GET'
                 })
                 .then(response => response.json())
-                .then(response => {
-                    // Populate contact drop-down (idempotent)
+                .then(contacts => {
+                    // Populate contact drop-down
                     const selected_contact = ui.out_contact.value;
-                    console.debug('Received messages', JSON.stringify(response));
+                    console.debug('Received messages', JSON.stringify(contacts));
                     const status_icon = {
                         1: '🟢',
                         2: '⚪',
                         3: '🔵'
                     };
                     ui.out_contact.innerHTML = '<option value="">Select a contact</option>';
-                    for (contact of response) {
+                    for (contact of contacts) {
                         if (contact.id != current_user_id) {
                             console.debug(contact)
                             ui.out_contact.innerHTML += `
@@ -143,14 +196,14 @@
                         }
                     }
                     ui.out_contact.value = selected_contact || ui.out_contact.options[1].value;
-                    // Populate contacts list (idempotent)
+                    // Populate contacts list
                     const status_color = {
                         1: 'success',
                         2: 'secondary',
                         3: 'info'
                     };
                     ui.contacts.innerHTML = '';
-                    for (contact of response) {
+                    for (contact of contacts) {
                         ui.contacts.innerHTML += `
                             <div data-umsg-contact-id="${contact.id}">
                                 <small>👋</small>
@@ -169,8 +222,8 @@
                         });
                         contact_dom.style.cursor = 'pointer';
                     }
-                    // Populate current user name (idempotent)
-                    const current_user_name = response.filter((contact) => contact.id == current_user_id).pop().name;
+                    // Populate current user name
+                    const current_user_name = contacts.filter((contact) => contact.id == current_user_id).pop().name;
                     for (current_user_display of ui.current_user_displays) {
                         current_user_display.innerHTML = current_user_name;
                     }
@@ -178,9 +231,19 @@
                 });
             }
 
+            /**
+             * Populate messages.
+             * 
+             * The user must be logged in (usually managed by populate_all()).
+             * This function is idempotent: calling it subsequently results in replaing the data in UI.
+             */
             let last_messages = {};
             function populate_messages() {
-                // Populate messages (idempotent)
+                if (!current_user_id) {
+                    set_status('Please login first !', 'warning');
+                    return;
+                }
+                // Populate messages
                 // set_status('Refreshing messages...', 'info', false);
                 return fetchRetry(`${api_url}/api/messages`, {
                     method: 'GET'
@@ -188,17 +251,17 @@
                 .then(response => {
                     return response.json();
                 })
-                .then(response => {
-                    console.debug('Received messages', JSON.stringify(response));
+                .then(messages => {
+                    console.debug('Received messages', JSON.stringify(messages));
                     // Notify new message
-                    const json = JSON.stringify(response);
-                    if (json != last_messages && response[response.length-1].contact_source_id != current_user_id) {
+                    const json = JSON.stringify(messages);
+                    if (json != last_messages && messages[messages.length-1].contact_source_id != current_user_id) {
                         set_status('New message !', 'warning');
                     }
                     last_messages = json;
                     // Populate messages
                     ui.in_messages.innerHTML = '';
-                    for (message of response) {
+                    for (message of messages) {
                         console.debug(message)
                         ui.in_messages.innerHTML += `
                             <div title="${message.date}" class="mb-1">
@@ -215,6 +278,11 @@
                 });
             }
 
+            /**
+             * Send the message in text field to contact in drop-down field.
+             * 
+             * This function is idempotent: calling it subsequently results in replaing the data in UI.
+             */
             function send_message() {
                 const contact_source_id = current_user_id;
                 const contact_destination_id = ui.out_contact.value;
