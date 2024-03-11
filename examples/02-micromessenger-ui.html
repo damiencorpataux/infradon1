@@ -15,10 +15,18 @@
     </head>
     <body>
         <div class="container py-4 px-4 px-md-0">
-            <h1>
-                <i class="brand pe-auto" data-feather="activity" stroke-width="3" width="48" height="58" style="position:relative; top: -3px; left:-3px"></i>
-                µessenger
-            </h1>
+            <div class="row">
+                <div class="col">
+                    <h1>
+                        <i class="brand pe-auto" data-feather="activity" stroke-width="3" width="48" height="58" style="position:relative; top: -3px; left:-3px"></i>
+                        µessenger
+                    </h1>
+                </div>
+                <div class="col text-end">
+                    <strong class="current-user me-1"></strong>
+                    <i class="brand" data-feather="user" stroke-width="3"></i>
+                </div>
+            </div>
             <p>
                 A <strong>microscopic messaging system</strong>.
             </p>
@@ -40,10 +48,10 @@
                             </div>
                         </div>
                         <div id="in-messages" class="mb-3"></div>
-                        <h5>Send your µessage</h5>
-                        <form onsubmit="return false">
+                        <h5>Send your µessage, <span class="current-user">user</span> !</h5>
+                        <form onsubmit="return false" autocomplete="off">
                             <select id="out-contact" class="form-select"></select>
-                            <input name="out-message" type="text" class="form-control" placeholder="Type your message...">
+                            <input name="out-message" type="text" class="form-control" placeholder="📨 Type your message...">
                             <button name="send-message" type="submit" class="btn btn-primary">Send ➤</button>
                         </form>
                     </div>
@@ -71,14 +79,18 @@
         <script>
             /**
              * UI Setup & Controller
+             * 
+             * TODO: Use localStorage to remember current_user_id and out_contact.value across page-reloads.
              */
-            const api_url = (window.location.href || 'http://localhost:8080').replace(/\/$/, '')
+            const api_url = (window.location.href || 'http://localhost:8080').replace(/\/$/, '');
+            const current_user_id = 1;  // FIXME: Hardcoded
             const ui = {
                 contacts: document.querySelector('#contacts'),
                 out_contact: document.querySelector('#out-contact'),
                 in_messages: document.querySelector('#in-messages'),
                 out_message: document.querySelector('input[name=out-message]'),
                 send_message: document.querySelector('button[name=send-message]'),
+                current_user_displays: document.querySelectorAll('.current-user'),
                 status: document.querySelector('#status')
             };
 
@@ -87,6 +99,18 @@
             setInterval(populate_all, 3333);
             ui.send_message.addEventListener('click', send_message);
             ui.send_message.addEventListener('submit', send_message);
+            ui.out_message.focus();
+            // Iteration 2: Allow user to login (insecure, because real authentication)
+            // for (current_user_display of ui.current_user_displays) {
+            //     current_user_display.style.cursor = 'pointer';
+            //     current_user_display.style.textDecoration = 'underline';
+            //     current_user_display.addEventListener('click', login_user);
+            // }
+
+            // function login_user() {
+            //     const user_name = prompt('Who are you ? Enter your name...');
+            //     console.info('Logging in', user_name, '(todo)')
+            // }
 
             function populate_all(notify) {
                 populate_contacts().then(() => {if (notify) set_status('Ready !', 'success')});
@@ -94,39 +118,69 @@
             }
             
             function populate_contacts() {
-                const status_color = {
-                    1: 'success',
-                    2: 'secondary',
-                    3: 'info'
-                };
                 // set_status('Refreshing contacts...', 'info', false);
                 return fetchRetry(`${api_url}/api/contacts`, {
                     method: 'GET'
                 })
                 .then(response => response.json())
                 .then(response => {
-                    const selected = ui.out_contact.value;
+                    // Populate contact drop-down (idempotent)
+                    const selected_contact = ui.out_contact.value;
                     console.debug('Received messages', JSON.stringify(response));
+                    const status_icon = {
+                        1: '🟢',
+                        2: '⚪',
+                        3: '🔵'
+                    };
                     ui.out_contact.innerHTML = '<option value="">Select a contact</option>';
                     for (contact of response) {
-                        console.debug(contact)
-                        ui.out_contact.innerHTML += `<option value="${contact.id}">${contact.name} (${contact.status_name})`;
+                        if (contact.id != current_user_id) {
+                            console.debug(contact)
+                            ui.out_contact.innerHTML += `
+                                <option value="${contact.id}">
+                                    👋 ${status_icon[contact.status_id]} ${contact.name}
+                                </option>`;
+                        }
                     }
+                    ui.out_contact.value = selected_contact || ui.out_contact.options[1].value;
+                    // Populate contacts list (idempotent)
+                    const status_color = {
+                        1: 'success',
+                        2: 'secondary',
+                        3: 'info'
+                    };
                     ui.contacts.innerHTML = '';
                     for (contact of response) {
                         ui.contacts.innerHTML += `
-                            <div>
-                                ${contact.name}
-                                <span class="badge text-primary text-${status_color[contact.status_id]}">${contact.status_name}</span>
+                            <div data-umsg-contact-id="${contact.id}">
+                                <small>👋</small>
+                                <strong>${contact.name}</strong>
+                                <small class="badge p-0 text-secondary">${contact.id == current_user_id ? '(you)' : ''}</small>
+                                &middot;
+                                <span class="badge p-0 text-${status_color[contact.status_id]}">
+                                    ${contact.status_name}
+                                </span>
                             </div>`;
                     }
-                    ui.out_contact.value = selected;
+                    for (contact_dom of ui.contacts.querySelectorAll('[data-umsg-contact-id]')) {
+                        contact_dom.addEventListener('click', (event) => {
+                            console.info(event.target, event.currentTarget.getAttribute('data-umsg-contact-id'))
+                            ui.out_contact.value = event.currentTarget.getAttribute('data-umsg-contact-id');
+                        });
+                        contact_dom.style.cursor = 'pointer';
+                    }
+                    // Populate current user name (idempotent)
+                    const current_user_name = response.filter((contact) => contact.id == current_user_id).pop().name;
+                    for (current_user_display of ui.current_user_displays) {
+                        current_user_display.innerHTML = current_user_name;
+                    }
                     // set_status('Ready !', 'success');
                 });
             }
 
             let last_messages = {};
             function populate_messages() {
+                // Populate messages (idempotent)
                 // set_status('Refreshing messages...', 'info', false);
                 return fetchRetry(`${api_url}/api/messages`, {
                     method: 'GET'
@@ -138,7 +192,7 @@
                     console.debug('Received messages', JSON.stringify(response));
                     // Notify new message
                     const json = JSON.stringify(response);
-                    if (json != last_messages && response[response.length-1].contact_source_id != 1) {  // FIXME: Hardcoded
+                    if (json != last_messages && response[response.length-1].contact_source_id != current_user_id) {
                         set_status('New message !', 'warning');
                     }
                     last_messages = json;
@@ -149,6 +203,8 @@
                         ui.in_messages.innerHTML += `
                             <div title="${message.date}" class="mb-1">
                                 <strong class="text-dark">${message.contact_source_name}</strong>
+                                <span class="text-secondary">→</span>
+                                <strong class="text-dark">${message.contact_destination_name}</strong>
                                 &middot;
                                 <span>${message.content}</span>
                                 <div><small class="text-secondary">${message.creation}</small></div>
@@ -160,11 +216,11 @@
             }
 
             function send_message() {
-                const contact_source_id = '1';   // FIXME: Hardcoded
+                const contact_source_id = current_user_id;
                 const contact_destination_id = ui.out_contact.value;
                 const content = ui.out_message.value;
                 const button_value = ui.send_message.innerHTML;
-                console.debug('Sending message...', contact_source_id, contact_destination_id, content);
+                console.info('Sending message...', contact_source_id, contact_destination_id, content);
                 if (!contact_destination_id) {
                     set_status('Please select a contact for your message !', 'warning');
                     return;

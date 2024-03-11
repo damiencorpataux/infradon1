@@ -14,7 +14,8 @@ CREATE TABLE status (
 
 CREATE TABLE contact (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL,  -- TODO: Create a UNIQUE INDEX that is case-insensitive, to refuse storing eg. 'Alice' and 'alice', see: https://stackoverflow.com/questions/4124185/postgresql-unique-indexes-and-string-case
+    --statusline VARCHAR(150),  -- TODO: Add the possibility for a contact to yell statusline !
     status_id INTEGER DEFAULT 1,
     CONSTRAINT status_id FOREIGN KEY(status_id) REFERENCES status(id)
 );
@@ -72,7 +73,8 @@ CREATE VIEW view_messages AS
         contact_destination.name AS contact_destination_name
     FROM rel_message
     JOIN contact AS contact_source ON rel_message.contact_id_source = contact_source.id
-    JOIN contact AS contact_destination ON rel_message.contact_id_destination = contact_destination.id;
+    JOIN contact AS contact_destination ON rel_message.contact_id_destination = contact_destination.id
+    ORDER BY creation;
 
 
 -- Sample data for testing
@@ -82,6 +84,7 @@ INSERT INTO status (name) VALUES ('DND');
 
 INSERT INTO contact (name, status_id) VALUES ('Alice', 1);
 INSERT INTO contact (name, status_id) VALUES ('Bob', 1);
+INSERT INTO contact (name, status_id) VALUES ('Peter', 2);
 
 INSERT INTO rel_message (contact_id_source, contact_id_destination, content) VALUES (1, 2, 'Ping ?');
 INSERT INTO rel_message (contact_id_source, contact_id_destination, content) VALUES (2, 1, 'Pong !');
