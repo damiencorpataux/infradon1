@@ -14,53 +14,64 @@
         </style>
     </head>
     <body>
-        <div class="container py-4 px-4 px-md-0">
+        <div class="container py-3">
             <div class="row">
-                <div class="col">
-                    <h1>
+                <div class="col text-nowrap">
+                    <h1 class="m-0">
                         <i class="brand pe-auto" data-feather="activity" stroke-width="3" width="48" height="58" style="position:relative; top: -3px; left:-3px"></i>
-                        µessenger
+                        <span style="font-size:1.275em">µ</span>essenger
                     </h1>
                 </div>
                 <div class="col text-end">
-                    <strong class="current-user me-1"></strong>
-                    <i class="brand" data-feather="user" stroke-width="3"></i>
+                    <p class="small text-muted d-none d-md-block">
+                        <small>A <strong>µicroscopic messaging system</strong>.
+                    </p>
+                    <div>
+                        <strong class="current-user me-1">
+                            <div class="spinner-border" role="status"></div>
+                        </strong>
+                        <i class="brand" data-feather="user" stroke-width="3"></i>
+                    </div>
                 </div>
             </div>
-            <p>
-                A <strong>microscopic messaging system</strong>.
-            </p>
-            <hr class="my-4">
+            <hr>
 
             <div id="umessage-ui">
 
                 <div id="status" class="alert alert-info">
-                    Hello 👋 ! Please log in.
+                Hello 👋 !<strong><a href="javascript:login_user()" class="text-dark">Please login</a></strong>.
                 </div>
 
                 <div class="row">
                     <div class="col-sm-9 mb-3">
-                        <h2>µessages</h2>
+                        <h2>📨 µessages</h2>
                         <div class="card">
                             <div id="in-messages" class="card-body" style="max-height:300px;overflow:auto;">
                                 <div class="spinner-border" role="status"></div>
                             </div>
                         </div>
                         <div id="in-messages" class="mb-3"></div>
-                        <h5>Send your µessage, <span class="current-user">user</span> !</h5>
+                        <h5>
+                            Send your µessage,
+                            <span class="current-user">
+                                <div class="spinner-border" role="status"></div>
+                            </span>
+                            !
+                        </h5>
                         <form onsubmit="return false" autocomplete="off">
                             <select id="out-contact" class="form-select"></select>
                             <input name="out-message" type="text" class="form-control" placeholder="📨 Type your message...">
-                            <button name="send-message" type="submit" class="btn btn-primary">Send ➤</button>
+                            <button name="send-message" type="submit" class="btn btn-primary">Seµd ➤</button>
                         </form>
                     </div>
                     <div class="col-sm-3">
-                        <h2>People</h2>
+                        <h2>👋 People</h2>
                         <div class="card">
                             <div id="contacts" class="card-body" style="max-height:300px;overflow:auto;">
                                 <div class="spinner-border" role="status"></div>
                             </div>
                         </div>
+                        <span class="ps-3 small text-secondary">Click to send a message !</span>
                     </div>
                 </div>
             </div>
@@ -78,8 +89,6 @@
         <script>
             /**
              * UI Configuration, Setup & Initialisation
-             * 
-             * TODO: Use localStorage to remember current_user_id and out_contact.value across page-reloads.
              */
             const api_url = (window.location.href || 'http://localhost:8080').replace(/\/$/, '');
             const ui = {
@@ -88,97 +97,70 @@
                 in_messages: document.querySelector('#in-messages'),
                 out_message: document.querySelector('input[name=out-message]'),
                 send_message: document.querySelector('button[name=send-message]'),
-                current_user_displays: document.querySelectorAll('.current-user'),
+                loggedin_user_displays: document.querySelectorAll('.current-user'),
                 status: document.querySelector('#status')
             };
-            let current_user_id = null;  // Note: The currently logged in user, this variable is usually set in login_user().
+            let loggedin_user_id = localStorage.getItem('loggedin_user_id');  // Note: The currently logged in user, this variable is usually set in login_user().
+
+            // App initialisation trigger.
             init();
 
             /**
              * App initialisation.
              * 
-             * Populate contacts and messages, setup user-interaction logic, and logs in the user.
+             * Re-draw contacts and messages, setup user-interaction logic, and logs in the user.
              */
             function init() {
-                populate_all();  // Initial population, triggers user login.
-                setInterval(() => {
-                    if (current_user_id) populate_all();  // Periodic re-population, to keep UI up-to-date with database (polling).
-                }, 3333);
+                // Focus on message text field (nice to have)
+                ui.out_message.focus();
+                // Listener: Send message
                 ui.send_message.addEventListener('click', send_message);
                 ui.send_message.addEventListener('submit', send_message);
-                ui.out_message.focus();
-                // Iteration 2: Allow user to login (insecure, because real authentication)
-                // for (current_user_display of ui.current_user_displays) {
-                //     current_user_display.style.cursor = 'pointer';
-                //     current_user_display.style.textDecoration = 'underline';
-                //     current_user_display.addEventListener('click', login_user);
-                // }
+                // Listener: User sign-out
+                for (loggedin_user_display of ui.loggedin_user_displays) {
+                    loggedin_user_display.style.cursor = 'pointer';
+                    loggedin_user_display.style.textDecoration = 'underline';
+                    loggedin_user_display.addEventListener('click', () => {
+                        if (loggedin_user_id) {
+                            if(confirm('Do you want to sign out ?')) {
+                                logout_user();
+                            }
+                        } else {
+                            login_user();
+                        }
+                    });
+                }
+                // Initial draw of data widgets - login of the user triggers redraw_all().
+                login_user(true);
+                // Setup periodic re-draw of data widgets, to keep UI up-to-date with database (polling).
+                setInterval(redraw_all, 3333); 
+                // Initialization done. The app should be up and running.
             }
 
             /**
-             * Populate contacts and messages.
+             * Re-draw contacts and messages.
              * 
              * Asks for login if user is not yet logged in.
              * This function is idempotent: calling it subsequently results in replaing the data in UI.
              */
-             function populate_all() {
-                login_user()
-                    .then(() => populate_contacts())
-                    .then(() => populate_messages());
-                // populate_contacts().then(() => {if (notify) set_status('Ready !', 'success')});
-                // populate_messages().then(() => {if (notify) set_status('Ready !', 'success')});
-            }
-
-            async function login_user() {
-                while (!current_user_id) {
-                    set_status('Hello 👋 ! Please log in.', 'info');
-                    console.info('current_user_id', current_user_id);
-                    let user_name = null;
-                    while (!user_name) user_name = prompt('Who are you ? Enter your name...');
-                    console.info('Logging in', user_name);
-                    response = await fetchRetry(`${api_url}/api/contacts`, {
-                        method: 'GET'
-                    });
-                    const contacts = await response.json();
-                    console.info('Contacts', contacts);
-                    // Check if given name exists in contacts
-                    const remove_accents = str => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');  // Remove accents from string, see: https://www.30secondsofcode.org/js/s/remove-accents/
-                    const existing_contacts = contacts.filter((contact) => remove_accents(contact.name.toUpperCase()) == remove_accents(user_name.toUpperCase()));
-                    console.info('Found contacts', existing_contacts)
-                    if (existing_contacts.length < 1) {
-                        console.info('No user matching name', user_name);
-                        alert(`Sorry, we have no user with name: ${user_name}`);
-                    }
-                    if (existing_contacts.length > 1) {
-                        console.error('Multiple contacts existing in database with name', user_name, existing_contacts);
-                        const message = `We have a problem: there is ${existing_contacts.length} contacts matching name '${user_name}' in database (${existing_contacts.map(c => c.name).join(', ')})`;
-                        alert(message);
-                    }
-                    if (existing_contacts.length == 1) {
-                        set_status(`👋 Welcome <strong>${existing_contacts[0].name}<strong> !`, 'success');
-                        current_user_id = existing_contacts[0].id;  // Leaving with variable current_user_id set.
-                    }
-                }
+            function redraw_all(do_login) {
+                return redraw_contacts().then(() => redraw_messages());
             }
 
             /**
-             * Populate contacts list and dropdown.
+             * Re-draw contacts list and dropdown.
              * 
              * This function is idempotent: calling it subsequently results in replaing the data in UI.
              */
-            function populate_contacts() {
-                if (!current_user_id) {
-                    set_status('Please login first !', 'warning');
-                    return;
-                }
+            function redraw_contacts() {
                 // set_status('Refreshing contacts...', 'info', false);
                 return fetchRetry(`${api_url}/api/contacts`, {
                     method: 'GET'
                 })
                 .then(response => response.json())
                 .then(contacts => {
-                    // Populate contact drop-down
-                    const selected_contact = ui.out_contact.value;
+                    // Re-draw contact drop-down
+                    const selected_contact_value = ui.out_contact.value || localStorage.getItem('selected_contact_value') || '';  // Restore value saved in localstorage if applicable.
                     console.debug('Received messages', JSON.stringify(contacts));
                     const status_icon = {
                         1: '🟢',
@@ -187,7 +169,7 @@
                     };
                     ui.out_contact.innerHTML = '<option value="">Select a contact</option>';
                     for (contact of contacts) {
-                        if (contact.id != current_user_id) {
+                        if (contact.id != loggedin_user_id) {
                             console.debug(contact)
                             ui.out_contact.innerHTML += `
                                 <option value="${contact.id}">
@@ -195,8 +177,9 @@
                                 </option>`;
                         }
                     }
-                    ui.out_contact.value = selected_contact || ui.out_contact.options[1].value;
-                    // Populate contacts list
+                    ui.out_contact.value = selected_contact_value;  // || ui.out_contact.options[1].value;
+                    localStorage.setItem('selected_contact_value', selected_contact_value)
+                    // Re-draw contacts list
                     const status_color = {
                         1: 'success',
                         2: 'secondary',
@@ -208,42 +191,36 @@
                             <div data-umsg-contact-id="${contact.id}">
                                 <small>👋</small>
                                 <strong>${contact.name}</strong>
-                                <small class="badge p-0 text-secondary">${contact.id == current_user_id ? '(you)' : ''}</small>
+                                <small class="badge p-0 text-secondary">${contact.id == loggedin_user_id ? '(you)' : ''}</small>
                                 &middot;
                                 <span class="badge p-0 text-${status_color[contact.status_id]}">
                                     ${contact.status_name}
                                 </span>
                             </div>`;
                     }
+                    // Add user interaction: When the user clicks a contact in the list, the drop-down is updated and message field is focused.
                     for (contact_dom of ui.contacts.querySelectorAll('[data-umsg-contact-id]')) {
+                        const contact_id = contact_dom.getAttribute('data-umsg-contact-id')
+                        if (contact_id == loggedin_user_id) continue;  // except for (you)
                         contact_dom.addEventListener('click', (event) => {
-                            console.info(event.target, event.currentTarget.getAttribute('data-umsg-contact-id'))
-                            ui.out_contact.value = event.currentTarget.getAttribute('data-umsg-contact-id');
+                            ui.out_contact.value = contact_id;
+                            ui.out_message.focus();
                         });
                         contact_dom.style.cursor = 'pointer';
-                    }
-                    // Populate current user name
-                    const current_user_name = contacts.filter((contact) => contact.id == current_user_id).pop().name;
-                    for (current_user_display of ui.current_user_displays) {
-                        current_user_display.innerHTML = current_user_name;
                     }
                     // set_status('Ready !', 'success');
                 });
             }
 
             /**
-             * Populate messages.
+             * Re-draw messages.
              * 
-             * The user must be logged in (usually managed by populate_all()).
+             * The user must be logged in (usually managed by redraw_all()).
              * This function is idempotent: calling it subsequently results in replaing the data in UI.
              */
-            let last_messages = {};
-            function populate_messages() {
-                if (!current_user_id) {
-                    set_status('Please login first !', 'warning');
-                    return;
-                }
-                // Populate messages
+            let last_messages = null;  // TODO: Store this UI state variable in LocalStorage, to save it between page reloads.
+            function redraw_messages() {
+                // Re-draw messages
                 // set_status('Refreshing messages...', 'info', false);
                 return fetchRetry(`${api_url}/api/messages`, {
                     method: 'GET'
@@ -255,11 +232,11 @@
                     console.debug('Received messages', JSON.stringify(messages));
                     // Notify new message
                     const json = JSON.stringify(messages);
-                    if (json != last_messages && messages[messages.length-1].contact_source_id != current_user_id) {
-                        set_status('New message !', 'warning');
+                    if (last_messages !== null && json != last_messages && messages[messages.length-1].contact_source_id != loggedin_user_id) {
+                        set_status('<strong>New message</strong> !', 'warning');
                     }
                     last_messages = json;
-                    // Populate messages
+                    // Re-draw messages
                     ui.in_messages.innerHTML = '';
                     for (message of messages) {
                         console.debug(message)
@@ -273,7 +250,7 @@
                                 <div><small class="text-secondary">${message.creation}</small></div>
                             </div>`;
                     }
-                    ui.in_messages.scrollTop = ui.in_messages.scrollHeight;
+                    ui.in_messages.scrollTop = ui.in_messages.scrollHeight;  // Scroll to most recent messages, at bottom.
                     // set_status('Ready !', 'success');
                 });
             }
@@ -284,17 +261,21 @@
              * This function is idempotent: calling it subsequently results in replaing the data in UI.
              */
             function send_message() {
-                const contact_source_id = current_user_id;
+                if (!loggedin_user_id) {
+                    set_status('☝️ Who are you ? <strong><a href="javascript:login_user()" class="text-dark">Please login</a></strong> first !', 'info');
+                    return;
+                }
+                const contact_source_id = loggedin_user_id;
                 const contact_destination_id = ui.out_contact.value;
                 const content = ui.out_message.value;
                 const button_value = ui.send_message.innerHTML;
                 console.info('Sending message...', contact_source_id, contact_destination_id, content);
                 if (!contact_destination_id) {
-                    set_status('Please select a contact for your message !', 'warning');
+                    set_status('<strong>Please select a contact</strong> for your message !', 'warning');
                     return;
                 }
                 if (!content) {
-                    set_status('Please type a message !', 'warning');
+                    set_status('<strong>Please type</strong> a message !', 'warning');
                     return;
                 }
                 ui.send_message.disabled = true;
@@ -302,21 +283,90 @@
                 return fetchRetry(`${api_url}/api/messages/${contact_source_id}/${contact_destination_id}/${content}`, {
                     method: 'POST'
                 })
-                // .then(response => response.json())
+                .then(response => response.text())
                 .then(response => {
                     ui.out_message.value = '';
-                    populate_messages();
-                    set_status('Message sent !', 'success');
+                    redraw_messages();
+                    set_status('Message <strong>sent</strong> !', 'success');
+                    console.info('Message sent, reply from server:', response);  // FIXME: Why is the response empty ?
                 })
                 .catch(error => {
                     console.error(error);
-                    set_status('Error, message was not sent.', 'danger');
+                    set_status(`Error, message was not sent (${error})`, 'danger');
                 })
                 .finally(error => {
                     ui.send_message.disabled = false;
                     ui.send_message.innerHTML= button_value;
                 });
+            }
 
+            /**
+             * Perform user log in:
+             * compare the user_name entered with contacts names in database (case and accent insensitive),
+             * set global variable loggedin_user_id with the id of the matching contact,
+             * loop until a valid login is reached.
+             * 
+             * Silent skips prompt dans database lookup and only refresh UI (used for app initialization).
+             * 
+             * Note: This method insecure.
+             */
+             async function login_user(silent) {
+                let user_name = null;
+                if (!silent) {
+                    user_name = prompt('Who are you ? Please enter your name...');
+                }
+                if (user_name || loggedin_user_id) {
+                    response = await fetchRetry(`${api_url}/api/contacts`, {
+                        method: 'GET'
+                    });
+                    const contacts = await response.json();
+                    // Check if given name exists in contacts before logging in the user.
+                    const remove_accents = str => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');  // Remove accents from string, see: https://www.30secondsofcode.org/js/s/remove-accents/
+                    const matching_contacts = contacts.filter((contact) => {
+                        return loggedin_user_id == contact.id  // user is already logged in
+                            || user_name && remove_accents(user_name.toUpperCase()) == remove_accents(contact.name.toUpperCase())  // user entered an existing name
+                    });
+                    console.log('Login: Matching contacts', matching_contacts, 'amongst all contacts', contacts);
+                    if (matching_contacts.length < 1) {
+                        // User not found
+                        console.info('No user matching name', user_name);
+                        alert(`Sorry, we have no user with name: ${user_name}`);
+                    }
+                    if (matching_contacts.length > 1) {
+                        // Multiple users found for name (problem)
+                        console.error('Multiple contacts existing in database with name', user_name, matching_contacts);
+                        const message = `We have a problem: there is ${matching_contacts.length} contacts matching name '${user_name}' in database (${matching_contacts.map(c => c.name).join(', ')}). Please contact your support team.`;
+                        alert(message);
+                    }
+                    if (matching_contacts.length == 1) {
+                        // Login successful
+                        loggedin_user_id = matching_contacts[0].id;  // Leaving with variable loggedin_user_id set.
+                        localStorage.setItem('loggedin_user_id', loggedin_user_id);  // Save value between page reloads.
+                        user_name = contacts.filter((contact) => contact.id == loggedin_user_id).pop().name;
+                    }
+                }
+                if (!loggedin_user_id) {
+                    user_name = 'anonymous';  // Default username for users that are not logged in.
+                }
+                for (loggedin_user_display of ui.loggedin_user_displays) {
+                    loggedin_user_display.innerHTML = user_name;
+                    loggedin_user_display.setAttribute('title', 'Sign out')
+                }
+                // Update tags in DOM displaying the loggedin user name
+                ui.out_message.disabled = false;
+                set_status(`👋 Welcome <strong>${user_name}</strong> ! ${loggedin_user_id ? '' : 'You can <strong><a href="javascript:login_user()" class="text-dark">login</a></strong>.'}`, 'success');
+                redraw_all();
+            }
+
+            /**
+             * Perform user logout.
+             */
+            function logout_user() {
+                // Logout user
+                loggedin_user_id = null;
+                localStorage.removeItem('loggedin_user_id');
+                localStorage.removeItem('selected_contact_value');
+                login_user(true);  // Apply logout (ie. the login logic with a loggedin_user_id == null)
             }
 
             /**
@@ -329,6 +379,22 @@
                 if (clear) ui.status.innerHTML = text;
                 else ui.status.innerHTML += ` ${text}`;
                 ui.status.classList.value = `alert alert-${cls}`;
+                // Scroll to element if not visible
+                const gutter = 10;
+                const rect = ui.status.getBoundingClientRect();
+                const isVisible = (
+                    rect.top >= 0 &&
+                    rect.left >= 0 &&
+                    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+                );
+                if (!isVisible) {
+                    window.scrollBy({
+                        top: rect.top - gutter,
+                        left: 0,
+                        behavior: 'smooth'
+                    });
+                }
             }
 
             /**
