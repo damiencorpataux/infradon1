@@ -8,7 +8,7 @@ Contacts
 Répertoire de contacts qui stocke quel genre de relation on a avec chacun de nos contacts.
 
 
-Mini Messenger
+µMessenger
 -
 Une structure de données permettant d'envoyer des messages entre contacts.
 

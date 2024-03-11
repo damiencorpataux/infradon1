@@ -3,9 +3,9 @@
 
 -- Structure
 \connect postgres
-DROP DATABASE messenger;
-CREATE DATABASE messenger;
-\connect messenger
+DROP DATABASE micromessenger;
+CREATE DATABASE micromessenger;
+\connect micromessenger
 
 CREATE TABLE status (
     id SERIAL PRIMARY KEY,
@@ -21,6 +21,7 @@ CREATE TABLE contact (
 
 CREATE TABLE rel_message (
     id SERIAL PRIMARY KEY,
+    creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     content TEXT NOT NULL,
     contact_id_source INTEGER NOT NULL,
     contact_id_destination INTEGER NOT NULL,
@@ -51,6 +52,28 @@ CREATE TABLE rel_message (
 --     NOTE: It could also be managed as a message status per contact (delivering, delivered, read)
 -- )
 
+CREATE VIEW view_contacts AS
+    SELECT
+        contact.id AS id,
+        contact.name AS name,
+        status.id AS status_id,
+        status.name AS status_name
+    FROM contact
+    JOIN status ON status.id = contact.status_id;
+
+CREATE VIEW view_messages AS
+    SELECT
+        rel_message.id AS id,
+        rel_message.creation AS creation,
+        rel_message.content AS content,
+        contact_source.id AS contact_source_id,
+        contact_source.name AS contact_source_name,
+        contact_destination.id AS contact_destination_id,
+        contact_destination.name AS contact_destination_name
+    FROM rel_message
+    JOIN contact AS contact_source ON rel_message.contact_id_source = contact_source.id
+    JOIN contact AS contact_destination ON rel_message.contact_id_destination = contact_destination.id;
+
 
 -- Sample data for testing
 INSERT INTO status (name) VALUES ('Online');
@@ -70,3 +93,6 @@ SELECT * FROM contact JOIN status ON contact.status_id = status.id;
 SELECT * FROM contact
   JOIN status ON contact.status_id = status.id
   JOIN rel_message ON rel_message.contact_id_source = contact.id;
+
+SELECT * FROM view_contacts;
+SELECT * FROM view_messages;

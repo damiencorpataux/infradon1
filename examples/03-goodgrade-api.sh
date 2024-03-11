@@ -41,8 +41,12 @@ while true; do
                     http_response_code=404;
                     ;;
             esac
+
+            # Excute SQL query
             http_response_body=$(psql -U postgres goodgrade -tAc "${sql}");
-            echo "HTTP/1.1 ${http_response_code} OK\r\nContent-Type: application/json\r\n\r\n${http_response_body}"  # Return JSON from SQL Query
+
+            # Send HTTP Response
+            echo "HTTP/1.1 ${http_response_code}\r\nContent-Type: application/json\r\n\r\n${http_response_body}"  # Return JSON from SQL Query
         fi
     '
     # content_length=$(( ${#http_response_body} + 4 ))
