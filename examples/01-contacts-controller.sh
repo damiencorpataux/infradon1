@@ -32,37 +32,32 @@ while true; do
         # Route HTTP Request
         case "$http_request_method $http_request_path" in
             "GET /")
-                http_response_body=$(cat "$script_dir/02-micromessenger-ui.html")  # Return a static HTML file
+                http_response_body=$(cat "$script_dir/01-contacts-view.html")  # Return a static HTML file
                 http_response_content_type="text/html"
                 ;;
             "GET /api/contacts")
-                sql="SELECT json_agg(to_json(view_contacts)) FROM view_contacts";
+                sql="SELECT json_agg(to_json(person)) FROM person";
                 ;;
-            "GET /api/messages")
-                sql="SELECT json_agg(to_json(view_messages)) FROM view_messages";
-                ;;
-            "POST /api/messages/"*)
-                source=$(echo "$http_request_path" | awk -F"/" '\''{print $(NF-2)}'\'')
-                destination=$(echo "$http_request_path" | awk -F"/" '\''{print $(NF-1)}'\'')
-                content=$(echo "$http_request_path" | awk -F"/" '\''{print $NF}'\'')
-                printf -v content "%b" "${content//\%/\\x}"  # Decode URL-encoded content, see https://stackoverflow.com/a/24003150
-                sql="
-                    INSERT INTO rel_message (contact_id_source, contact_id_destination, content)
-                    VALUES ($source, $destination, '\''$content'\'')";
+            "GET /api/contacts/attributes")
+                sql="SELECT json_agg(to_json(view_person_attribute)) FROM view_person_attribute";
                 ;;
             "POST /api/contacts/"*)
-                content=$(echo "$http_request_path" | awk -F"/" '\''{print $NF}'\'')
-                printf -v content "%b" "${content//\%/\\x}"  # Decode URL-encoded content, see https://stackoverflow.com/a/24003150
+                label=$(echo "$http_request_path" | awk -F"/" '\''{print $NF}'\'')
+                printf -v label "%b" "${label//\%/\\x}"  # Decode URL-encoded string, see https://stackoverflow.com/a/24003150
                 sql="
-                    INSERT INTO contact (status_id, name)
-                    VALUES (1, '\''$content'\'')";
+                    INSERT INTO person (label) VALUES ('\''$label'\'')";
                 ;;
-            # "GET /static/"*)
-            #     file=$(echo "$http_request_path" | awk -F"/" '\''{print $NF}'\'')
-            #     printf -v file "%b" "${file//\%/\\x}"  # Decode URL-encoded content, see https://stackoverflow.com/a/24003150
-            #     http_response_body=$(cat "$script_dir/$file")  # Return a static HTML file
-            #     http_response_content_type="text/plain"
-            #     ;;
+            "POST /api/contacts/attributes"*)
+                person_id=$(echo "$http_request_path" | awk -F"/" '\''{print $(NF-2)}'\'')
+                attribute_name=$(echo "$http_request_path" | awk -F"/" '\''{print $(NF-1)}'\'')
+                attribute_value=$(echo "$http_request_path" | awk -F"/" '\''{print $NF}'\'')
+                printf -v attribute_name "%b" "${attribute_name//\%/\\x}"  # Decode URL-encoded string, see https://stackoverflow.com/a/24003150
+                printf -v attribute_value "%b" "${attribute_value//\%/\\x}"  # Decode URL-encoded string, see https://stackoverflow.com/a/24003150
+                sql="
+                    INSERT INTO rel_attribute_person (person_id, name, value)
+                    VALUES ($person_id, '\''$attribute_name'\'', '\''$attribute_value'\'')";
+                ;;
+                # TODO: CRUD Opertations for /contacts/attributes
             *)
                 sql="SELECT 404";
                 http_response_code=404;
@@ -72,12 +67,12 @@ while true; do
         # Excute SQL query, if any $sql
         if [ ! -z "$sql" ]; then
             echo "  Executing SQL: $sql" >&2
-            http_response_body=$(psql -U postgres micromessenger -tAc "${sql}");
+            http_response_body=$(psql -U postgres contacts -tAc "${sql}");
             http_response_content_type="application/json"
         fi;
 
         # Send HTTP Response
-        echo "HTTP/1.1 ${http_response_code}\r\nContent-Type: \r\n\r\n${http_response_body}"  # Return JSON from SQL Query
+        echo "HTTP/1.1 ${http_response_code}\r\nContent-Type: ${http_response_content_type}\r\n\r\n${http_response_body}"  # Return JSON from SQL Query
     '
     # content_length=$(( ${#http_response_body} + 4 ))
     # echo "HTTP/1.1 200 OK\r\nContent-Length: ${content_length}\r\nContent-Type: plain/text\r\n\r\n${http_response_body} - "

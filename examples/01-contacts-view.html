@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>µessenger</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            :root {
+               --brand: Tomato;
+            }
+            .brand {
+                color: var(--brand);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container py-3">
+            <div class="row">
+                <div class="col text-nowrap">
+                    <h1 class="m-0">
+                        <i class="brand pe-auto" data-feather="heart" stroke-width="3" width="48" height="58" style="position:relative; top: -3px; left:-3px"></i>
+                        <span style="font-size:1.275em">µ</span>espotes
+                    </h1>
+                </div>
+                <div class="col text-end">
+                    <p class="small text-muted d-none d-md-block">
+                        <small>A µicroscopic <strong>key-value store</strong>.
+                    </p>
+                </div>
+            </div>
+            <hr>
+
+            <div id="status" class="alert alert-info">
+                Hello 👋 !
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <h2>
+                        <i class="brand pe-auto" data-feather="user" stroke-width="4" height="24" style="vertical-align:baseline"></i>
+                        Contacts
+                    </h2>
+                    <div class="card my-3">
+                        <div class="card-body">
+                            <h6 class="d-inline-block">Create a new Contact</h6>
+                            <form id="create-contact" onsubmit="return false" autocomplete="off" class="d-flex">
+                                <input disabled name="create-contact-label" type="text" class="form-control" placeholder="Enter a label for new contact...">
+                                <button disabled type="submit" class="btn btn-primary">+</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div id="contact-list">
+                        <div class="spinner-border" role="status"></div>
+                    </div>
+                    <div class="card my-3">
+                        <div class="card-body">
+                            <h6 class="d-inline-block">Add a tag</h6>
+                            <span class="small text-muted">for the selected contact(s)</span>
+                            <form id="create-contact-attribute" onsubmit="return false" autocomplete="off" class="d-flex">
+                                <input disabled name="create-contact-attribute-name" type="text" class="form-control" placeholder="What attribute ?">
+                                <input disabled name="create-contact-attribute-value" type="text" class="form-control" placeholder="What Value ?">
+                                <button disabled type="submit" class="btn btn-primary">+</button>
+                                <!-- Iteration 2: Catalog for tag name:
+                                    <select id="contact-attribute-name" class="form-select"></select>
+                                -->
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="ms-4 ms-md-0 mt-md-5">
+                        <div class="d-md-block d-flex">
+                            <h5 class="d-none d-sm-block text-nowrap">
+                                <i class="brand pe-auto" data-feather="tag" stroke-width="4" height="16" style="vertical-align:baseline"></i>
+                                Tags
+                            </h5>
+                            <div class="ps-2 align-self-center small text-secondary">
+                                Click a tag below
+                                <span class="d-md-none d-lg-inline">to use name for a new tag</span>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div id="attribute-list" class="card-body" style="max-height:300px;overflow:auto;">
+                                <div class="spinner-border" role="status"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <footer class="mt-4 small opacity-25 text-end">
+                © Damien Corpataux for unit
+                <a href="https://github.com/damiencorpataux/infradon1">InfraDon1</a>.
+            </footer>
+        </div>
+
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <script src="https://unpkg.com/feather-icons"></script>
+        <script>feather.replace()</script>
+
+        <script>
+            /**
+             * UI Configuration, Setup & Initialisation
+             */
+            const api_url = (window.location.href || 'http://localhost:8080').replace(/\/$/, '');
+            const ui = {
+                contacts: document.querySelector('#contact-list'),
+                create_contact: document.querySelector('form#create-contact'),
+                create_contact_label: document.querySelector('input[name=create-contact-label]'),
+                attributes: document.querySelector('#attribute-list'),
+                create_contact_attribute: document.querySelector('form#create-contact-attribute'),
+                create_contact_attribute_name: document.querySelector('input[name=create-contact-attribute-name]'),
+                create_contact_attribute_value: document.querySelector('input[name=create-contact-attribute-value]'),
+                app_status: document.querySelector('#status')
+            };
+
+            // App initialisation trigger.
+            init();
+
+            /**
+             * App initialisation.
+             * 
+             * Draw contacts and tags (attributes).
+             * Setup user-interaction logic.
+             */
+            function init() {
+                console.log(ui)
+                // Listener: Create contact
+                // ui.create_contact.addEventListener('submit', create_contact);
+                // ui.create_contact_attribute.addEventListener('submit', create_contact_attribute);
+                // Initial draw of the data in UI.
+                redraw_all();
+                // Setup periodic re-draw of data widgets, to keep UI up-to-date with database (polling).
+                setInterval(redraw_all, 5555); 
+                // Initialization done. The app should be up and running.
+            }
+
+            /**
+             * Re-draw contacts and messages.
+             * 
+             * Asks for login if user is not yet logged in.
+             * This function is idempotent: calling it subsequently results in replaing the data in UI.
+             */
+            function redraw_all(do_login) {
+                return redraw_contacts() //.then(() => redraw_attributes());
+            }
+
+            /**
+             * Re-draw contacts list and dropdown.
+             * 
+             * This function is idempotent: calling it subsequently results in replaing the data in UI.
+             */
+            function redraw_contacts() {
+                // set_status('Refreshing contacts...', 'info', false);
+                return fetchRetry(`${api_url}/api/contacts/attributes`, {
+                    method: 'GET'
+                })
+                .then(response => response.json())
+                .then(attributes => {
+                    // let contacts = {};
+                    // for (attribute of attributes) {
+                    //     contacts[contact.label]
+                    // }
+                    // Clear and redraw table for contacts.
+                    ui.contacts.innerHTML = '';
+                    ui.contacts.appendChild(createTable(attributes, {
+                        'id': 'id',
+                        'person_label': 'Contact',
+                        'name': 'Tag Name',
+                        'value': 'Tag Value',
+                    }));
+                    // Clear and redraw table for attributes.
+                    ui.attributes.innerHTML = '';
+                    // Create a set of unique attribute names and create a list of objects containing a key 'name' with the value of the attribute.
+                    const all_attributes = [...new Set(attributes.map(attribute => attribute.name))].map((attribute_name => {return {name: attribute_name}}));
+                    console.log(all_attributes)
+                    ui.attributes.appendChild(createTable(all_attributes, {
+                        'name': 'Existing Tags'
+                    }));
+                });
+            }
+
+            /**
+             * Utility: Create and return a populated DOM Table object from data.
+             */
+            function createTable(data, headerMapping) {
+                const tableHTML = `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                ${Object.values(headerMapping).map(displayField => `<th>${displayField}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map(item => `
+                                <tr>
+                                    ${Object.keys(headerMapping).map(dbfield => `<td>${item[dbfield]}</td>`).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                const table = document.createElement('div');
+                table.innerHTML = tableHTML.trim();
+                return table.firstElementChild;
+            }
+
+            /**
+             * Utility: Update status message.
+             * https://stackoverflow.com/a/76140785/1300775
+             */
+            function set_status(text, cls, clear) {
+                clear = clear === undefined ? true : clear;
+                cls = cls || 'secondary';
+                if (clear) ui.status.innerHTML = text;
+                else ui.status.innerHTML += ` ${text}`;
+                ui.status.classList.value = `alert alert-${cls}`;
+                // Scroll to element if not visible
+                const gutter = 10;
+                const rect = ui.status.getBoundingClientRect();
+                const isVisible = (
+                    rect.top >= 0 &&
+                    rect.left >= 0 &&
+                    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+                );
+                if (!isVisible) {
+                    window.scrollBy({
+                        top: rect.top - gutter,
+                        left: 0,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+
+            /**
+             * Utility: Fetch API with retry.
+             * https://stackoverflow.com/a/76140785/1300775
+             * 
+             * We need this because out HTTP Service implementation is very basic.
+             */
+            async function fetchRetry(...args) {
+                const MAX_NB_RETRY = 6;
+                const RETRY_DELAY_MS = 333;
+                let retryLeft = MAX_NB_RETRY;
+                while (retryLeft > 0){
+                    try {
+                        console.debug(`Fetching ${retryLeft<MAX_NB_RETRY ? ' retry' : ''}`, MAX_NB_RETRY-retryLeft, `max ${MAX_NB_RETRY}*${RETRY_DELAY_MS}ms`, args);
+                        return await fetch(...args);
+                    }
+                    catch (error) { 
+                        if (!retryLeft) console.error(error);
+                        await sleep(RETRY_DELAY_MS)
+                    }
+                    finally {
+                        retryLeft -= 1;
+                    }
+                }
+                throw new Error(`Too many retries (${MAX_NB_RETRY} * ${RETRY_DELAY_MS}ms)`);
+
+                function sleep(delay){
+                    return new Promise((resolve) => setTimeout(resolve, delay));
+                }
+            }
+
+        </script>
+    </body>
+</html>

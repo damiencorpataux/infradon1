@@ -4,7 +4,7 @@
 
 -- Structure: Database (dev purpose)
 \connect postgres
-DROP DATABASE goodgrade;
+DROP DATABASE IF EXISTS goodgrade;
 CREATE DATABASE goodgrade;
 \connect goodgrade
 

@@ -3,7 +3,7 @@
 
 -- Structure
 \connect postgres
-DROP DATABASE micromessenger;
+DROP DATABASE IF EXISTS micromessenger;
 CREATE DATABASE micromessenger;
 \connect micromessenger
 
@@ -85,6 +85,7 @@ INSERT INTO status (name) VALUES ('DND');
 INSERT INTO contact (name, status_id) VALUES ('Alice', 1);
 INSERT INTO contact (name, status_id) VALUES ('Bob', 1);
 INSERT INTO contact (name, status_id) VALUES ('Peter', 2);
+INSERT INTO contact (name, status_id) VALUES ('Peter', 3);
 
 INSERT INTO rel_message (contact_id_source, contact_id_destination, content) VALUES (1, 2, 'Ping ?');
 INSERT INTO rel_message (contact_id_source, contact_id_destination, content) VALUES (2, 1, 'Pong !');

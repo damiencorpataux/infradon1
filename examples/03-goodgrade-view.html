@@ -63,34 +63,26 @@
                 /**
                  * Create and return a populated DOM Table object from data.
                  */
-                static createTable(data, headerMapping) {
-                    const table = document.createElement('table');
-                    const thead = document.createElement('thead');
-                    const tbody = document.createElement('tbody');
-                    table.classList.add('table');
-                    table.appendChild(thead);
-                    table.appendChild(tbody);
-                    // Create table header
-                    const headerRow = document.createElement('tr');
-                    Object.keys(headerMapping).forEach(dbfield => {
-                        const displayField = headerMapping[dbfield];
-                        const th = document.createElement('th');
-                        th.textContent = displayField;
-                        headerRow.appendChild(th);
-                    });
-                    thead.appendChild(headerRow);
-                    // Populate table body
-                    tbody.innerHTML = '';
-                    data.forEach(item => {
-                        const row = document.createElement('tr');
-                        Object.keys(headerMapping).forEach(dbfield => {
-                            const cell = document.createElement('td');
-                            cell.textContent = item[dbfield];
-                            row.appendChild(cell);
-                        });
-                        tbody.appendChild(row);
-                    });
-                    return table;
+                 static createTable(data, headerMapping) {
+                    const tableHTML = `
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    ${Object.values(headerMapping).map(displayField => `<th>${displayField}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.map(item => `
+                                    <tr>
+                                        ${Object.keys(headerMapping).map(dbfield => `<td>${item[dbfield]}</td>`).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    const table = document.createElement('div');
+                    table.innerHTML = tableHTML.trim();
+                    return table.firstElementChild;
                 }
 
                 /**
