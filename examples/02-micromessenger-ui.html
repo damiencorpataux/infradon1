@@ -310,8 +310,8 @@
              * 
              * Note: This method insecure.
              */
-             async function login_user(silent) {
-                let user_name = null;
+             async function login_user(silent, user_name) {
+                // let user_name = null;
                 if (!silent) {
                     user_name = prompt('Who are you ? Please enter your name...');
                 }
@@ -328,9 +328,15 @@
                     });
                     console.log('Login: Matching contacts', matching_contacts, 'amongst all contacts', contacts);
                     if (matching_contacts.length < 1) {
-                        // User not found
+                        // User not found, create the user.
                         console.info('No user matching name', user_name);
-                        alert(`Sorry, we have no user with name: ${user_name}`);
+                        let response = await fetchRetry(`${api_url}/api/contacts/${user_name}`, {
+                            method: 'POST'
+                        });
+                        response = await response.text();
+                        alert(`User created: ${user_name}`);
+                        console.log('Created user', user_name, response);
+                        login_user(true, user_name);  // Perform login
                     }
                     if (matching_contacts.length > 1) {
                         // Multiple users found for name (problem)

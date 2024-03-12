@@ -50,6 +50,13 @@ while true; do
                     INSERT INTO rel_message (contact_id_source, contact_id_destination, content)
                     VALUES ($source, $destination, '\''$content'\'')";
                 ;;
+            "POST /api/contacts/"*)
+                content=$(echo "$http_request_path" | awk -F"/" '\''{print $NF}'\'')
+                printf -v content "%b" "${content//\%/\\x}"  # Decode URL-encoded content, see https://stackoverflow.com/a/24003150
+                sql="
+                    INSERT INTO contact (status_id, name)
+                    VALUES (1, '\''$content'\'')";
+                ;;
             # "GET /static/"*)
             #     file=$(echo "$http_request_path" | awk -F"/" '\''{print $NF}'\'')
             #     printf -v file "%b" "${file//\%/\\x}"  # Decode URL-encoded content, see https://stackoverflow.com/a/24003150
