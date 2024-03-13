@@ -77,7 +77,7 @@ while true; do
         fi;
 
         # Send HTTP Response
-        echo "HTTP/1.1 ${http_response_code}\r\nContent-Type: \r\n\r\n${http_response_body}"  # Return JSON from SQL Query
+        echo "HTTP/1.1 ${http_response_code}\r\nContent-Type: ${http_response_content_type}\r\n\r\n${http_response_body}"  # Return JSON from SQL Query
     '
     # content_length=$(( ${#http_response_body} + 4 ))
     # echo "HTTP/1.1 200 OK\r\nContent-Length: ${content_length}\r\nContent-Type: plain/text\r\n\r\n${http_response_body} - "

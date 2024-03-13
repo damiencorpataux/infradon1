@@ -30,19 +30,21 @@
             </div>
             <hr>
 
-            <div id="status" class="alert alert-info">
-                Hello 👋 !
+            <div id="status" class="alert alert-info" style="position:absolute; top: 60px; right:33px">
+                Hello 👋
+                <br>Welcome and <strong>enjoy this app</strong> !
             </div>
 
             <div class="row">
-                <div class="col-md-8">
+                <div class="col-md-8 col-lg-9">
                     <h2>
                         <i class="brand pe-auto" data-feather="user" stroke-width="4" height="24" style="vertical-align:baseline"></i>
-                        Contacts
+                        <span contenteditable>Contacts</span> <!-- FIXME: This is actually a generic store, contacts could be ideas, todos, etc. -->
                     </h2>
-                    <div class="card my-3">
+                    <div class="card my-3 mt-3">
                         <div class="card-body">
                             <h6 class="d-inline-block">Create a new Contact</h6>
+                            <span class="small text-muted">and then add tags</span>
                             <form id="create-contact" onsubmit="return false" autocomplete="off" class="d-flex">
                                 <input disabled name="create-contact-label" type="text" class="form-control" placeholder="Enter a label for new contact...">
                                 <button disabled type="submit" class="btn btn-primary">+</button>
@@ -67,16 +69,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 col-lg-3">
                     <div class="ms-4 ms-md-0 mt-md-5">
                         <div class="d-md-block d-flex">
                             <h5 class="d-none d-sm-block text-nowrap">
                                 <i class="brand pe-auto" data-feather="tag" stroke-width="4" height="16" style="vertical-align:baseline"></i>
                                 Tags
                             </h5>
-                            <div class="ps-2 align-self-center small text-secondary">
-                                Click a tag below
-                                <span class="d-md-none d-lg-inline">to use name for a new tag</span>
+                            <div class="align-self-center small text-secondary ms-sm-2">
+                                Click a tagname below
+                                <span class="d-md-none d-lg-inline">to use for a new tag</span>
                             </div>
                         </div>
                         <div class="card">
@@ -124,15 +126,20 @@
              * Setup user-interaction logic.
              */
             function init() {
-                console.log(ui)
-                // Listener: Create contact
-                // ui.create_contact.addEventListener('submit', create_contact);
-                // ui.create_contact_attribute.addEventListener('submit', create_contact_attribute);
+                // Listener: Create contact.
+                ui.create_contact.addEventListener('submit',() => {
+                    create_contact()
+                });
+                // Listener: Create tag.
+                ui.create_contact_attribute.addEventListener('submit', () => {
+                    create_contact_attribute('default tag')
+                });
                 // Initial draw of the data in UI.
                 redraw_all();
                 // Setup periodic re-draw of data widgets, to keep UI up-to-date with database (polling).
                 setInterval(redraw_all, 5555); 
                 // Initialization done. The app should be up and running.
+                setTimeout(() => set_status(null), 3333);
             }
 
             /**
@@ -152,49 +159,74 @@
              */
             function redraw_contacts() {
                 // set_status('Refreshing contacts...', 'info', false);
-                return fetchRetry(`${api_url}/api/contacts/attributes`, {
+                return fetchRetry(`${api_url}/api/contacts`, {
                     method: 'GET'
                 })
                 .then(response => response.json())
-                .then(attributes => {
-                    // let contacts = {};
-                    // for (attribute of attributes) {
-                    //     contacts[contact.label]
-                    // }
+                .then(persons => {
                     // Clear and redraw table for contacts.
                     ui.contacts.innerHTML = '';
-                    ui.contacts.appendChild(createTable(attributes, {
-                        'id': 'id',
+                    ui.contacts.appendChild(createTable(persons, {
+                        // 'person_id': 'id',
                         'person_label': 'Contact',
-                        'name': 'Tag Name',
-                        'value': 'Tag Value',
+                        'attributes': 'Tags'
+                    }, {
+                        'person_label': (value, index, item) => `
+                            <div class="pb-1">
+                                <strong>${value}</strong>
+                                <br><span class="small text-secondary" title="Creation date">${item.person_creation}</span>
+                            </div>
+                        `,
+                        'attributes': items => items.map((item) => `
+                            <div class="pb-1" title="${items.length} tags">
+                                <strong class="text-muted">${item.name}:</strong> ${item.value}
+                                <br><span class="small text-secondary" title="Creation date">${item.creation}</span>
+                            </div>
+                        `).join('')
                     }));
+                    // Listener: Row selector.
+                    for (const row of ui.contacts.querySelectorAll('table tbody tr')) row.addEventListener('click', function(event) {
+                        const was_selected = event.currentTarget.classList.contains('table-info');
+                        for (const sibling of event.currentTarget.parentElement.querySelectorAll('tr')) sibling.classList.value = '';
+                        event.currentTarget.classList.value = was_selected ? '' : 'table-info';  // Manage select/unselect.
+                    });
+
                     // Clear and redraw table for attributes.
                     ui.attributes.innerHTML = '';
                     // Create a set of unique attribute names and create a list of objects containing a key 'name' with the value of the attribute.
-                    const all_attributes = [...new Set(attributes.map(attribute => attribute.name))].map((attribute_name => {return {name: attribute_name}}));
-                    console.log(all_attributes)
+                    const all_attributes = [...new Set(persons.flatMap(person => person.attributes.map(attribute => attribute.name)))]
+                        .filter(name => name !== null && name !== undefined)
+                        .map(attribute => ({name: attribute}));
                     ui.attributes.appendChild(createTable(all_attributes, {
                         'name': 'Existing Tags'
-                    }));
+                    }, {}, 'table-sm'));
                 });
             }
 
             /**
              * Utility: Create and return a populated DOM Table object from data.
              */
-            function createTable(data, headerMapping) {
+            function createTable(data, headerMapping, formatterMapping, table_cls) {
+                formatterMapping = formatterMapping || {};
                 const tableHTML = `
-                    <table class="table">
+                    <table class="table table-hover table-responsive ${table_cls}">
                         <thead>
                             <tr>
-                                ${Object.values(headerMapping).map(displayField => `<th>${displayField}</th>`).join('')}
+                                ${Object.values(headerMapping).map(displayField => `
+                                    <th>
+                                        ${displayField}
+                                    </th>
+                                `).join('')}
                             </tr>
                         </thead>
                         <tbody>
                             ${data.map(item => `
                                 <tr>
-                                    ${Object.keys(headerMapping).map(dbfield => `<td>${item[dbfield]}</td>`).join('')}
+                                    ${Object.keys(headerMapping).map((dbfield, index) => `
+                                        <td>
+                                            ${(formatterMapping[dbfield]||((x)=>x))(item[dbfield], index, item)}
+                                        </td>
+                                    `).join('')}
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -210,26 +242,31 @@
              * https://stackoverflow.com/a/76140785/1300775
              */
             function set_status(text, cls, clear) {
-                clear = clear === undefined ? true : clear;
-                cls = cls || 'secondary';
-                if (clear) ui.status.innerHTML = text;
-                else ui.status.innerHTML += ` ${text}`;
-                ui.status.classList.value = `alert alert-${cls}`;
-                // Scroll to element if not visible
-                const gutter = 10;
-                const rect = ui.status.getBoundingClientRect();
-                const isVisible = (
-                    rect.top >= 0 &&
-                    rect.left >= 0 &&
-                    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-                    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-                );
-                if (!isVisible) {
-                    window.scrollBy({
-                        top: rect.top - gutter,
-                        left: 0,
-                        behavior: 'smooth'
-                    });
+                if (!text) {
+                    ui.app_status.classList.value = `d-none`;
+                } else {
+                    ui.app_status.classList.value = `d-none`;
+                    clear = clear === undefined ? true : clear;
+                    cls = cls || 'secondary';
+                    if (clear) ui.app_status.innerHTML = text;
+                    else ui.app_status.innerHTML += ` ${text}`;
+                    ui.app_status.classList.value = `alert alert-${cls}`;
+                    // Scroll to element if not visible
+                    const gutter = 10;
+                    const rect = ui.app_status.getBoundingClientRect();
+                    const isVisible = (
+                        rect.top >= 0 &&
+                        rect.left >= 0 &&
+                        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+                        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+                    );
+                    if (!isVisible) {
+                        window.scrollBy({
+                            top: rect.top - gutter,
+                            left: 0,
+                            behavior: 'smooth'
+                        });
+                    }
                 }
             }
 

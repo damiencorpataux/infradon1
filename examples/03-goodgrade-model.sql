@@ -107,49 +107,8 @@ CREATE VIEW view_grades_short AS
     SELECT grade_id, period_name, module_name, unit_name, grade_weight, grade_weight_symbol, grade_value, grade_name
     FROM view_grades;
 
--- Notes:
--- -- Query: Export to  (Excel)
--- -- depuis la CLI Linux:
--- --   psql -U postgres goodgrade --csv -c "SELECT * FROM view_grades"
--- \pset format csv
--- SELECT * FROM view_grades_short;
--- \pset format aligned
 
--- -- Query: JSON Output
--- -- https://stackoverflow.com/q/24006291/1300775
--- WITH query AS
--- (
---     SELECT * FROM view_grades
--- )
--- SELECT json_agg(row_to_json(query)) FROM query;
-
-
--- TODO: Try to implement weighted average using SUM and CASE, as described here:
--- https://stackoverflow.com/a/36652407/1300775
-SELECT grade_id, module_id, grade_weight, grade_weight_symbol, grade_value, grade_name FROM view_grades;
-
-SELECT  -- FIXME: Basic average that doesn't take grade_weight into acount
-    module_id,
-    COUNT(*),
-    AVG(
-        grade_value
-    ) AS grade_count
-FROM view_grades
-GROUP BY module_id;
-
-SELECT  -- FIXME: I don't understant this behaviour.
-    module_id,
-    COUNT(*),
-    SUM(grade_value) FILTER (WHERE grade_weight_symbol = '+')
-    + AVG(grade_value) FILTER (WHERE grade_weight_symbol = '*')  -- FIXME: Take weight into account
-    + AVG(grade_value / 100) FILTER (WHERE grade_weight_symbol = '%')  -- FIXME: Same
-    AS grade_module
-FROM view_grades
--- WHERE grade_id < 3  -- FIXME: This fails
-GROUP BY module_id;
-
-
--- FIXME: TODO: Weighted average for a module, see:
+-- Weighted average for a module, see:
 -- https://stackoverflow.com/a/71866616/1300775
 -- https://stackoverflow.com/a/8924119/1300775
 -- and chatgpt: https://chat.openai.com/share/23b5a19a-4f14-4977-8792-5dd1ef71b3b4
@@ -209,6 +168,46 @@ CREATE VIEW view_grades_avg_per_module AS
 
 
 -- Query: For testing
-SELECT * FROM view_grades_avg_per_module;
+-- SELECT * FROM view_grades_avg_per_module;
 -- FIXME: Plain average, missing weights
 -- SELECT period_id, module_id, unit_id, period_name, module_name, unit_name, COUNT(*) AS grade_count, AVG(grade_value) AS grade_average FROM view_grades GROUP BY module_id, module_name;
+
+-- Notes:
+-- -- Query: Export to CSV (eg. for Excel)
+-- -- depuis la CLI Linux:
+-- --   psql -U postgres goodgrade --csv -c "SELECT * FROM view_grades"
+\pset format csv
+SELECT * FROM view_grades_short;
+\pset format aligned
+
+-- -- Query: JSON Output
+-- -- https://stackoverflow.com/q/24006291/1300775
+-- WITH query AS
+-- (
+--     SELECT * FROM view_grades
+-- )
+-- SELECT json_agg(row_to_json(query)) FROM query;
+
+
+-- TODO: Try to implement weighted average using SUM and CASE, as described here:
+-- https://stackoverflow.com/a/36652407/1300775
+-- SELECT grade_id, module_id, grade_weight, grade_weight_symbol, grade_value, grade_name FROM view_grades;
+-- SELECT  -- FIXME: Basic average that doesn't take grade_weight into acount
+--     module_id,
+--     COUNT(*),
+--     AVG(
+--         grade_value
+--     ) AS grade_count
+-- FROM view_grades
+-- GROUP BY module_id;
+
+-- SELECT  -- FIXME: Another way to compute weighted average for a module. I don't understant this behaviour.
+--     module_id,
+--     COUNT(*),
+--     SUM(grade_value) FILTER (WHERE grade_weight_symbol = '+')
+--     + AVG(grade_value) FILTER (WHERE grade_weight_symbol = '*')  -- FIXME: Take weight into account
+--     + AVG(grade_value / 100) FILTER (WHERE grade_weight_symbol = '%')  -- FIXME: Same
+--     AS grade_module
+-- FROM view_grades
+-- -- WHERE grade_id < 3  -- FIXME: This fails
+-- GROUP BY module_id;

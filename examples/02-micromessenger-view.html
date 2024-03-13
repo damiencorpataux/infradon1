@@ -113,6 +113,7 @@
             function init() {
                 // Focus on message text field (nice to have)
                 ui.out_message.focus();
+                ui.out_contact.addEventListener('change', () => ui.out_message.focus())
                 // Listener: Send message
                 ui.send_message.addEventListener('click', send_message);
                 ui.send_message.addEventListener('submit', send_message);
@@ -292,7 +293,9 @@
                 })
                 .catch(error => {
                     console.error(error);
-                    set_status(`Error, message was not sent (${error})`, 'danger');
+                    set_status(`
+                        <strong>Error, message was not sent !</strong> Please try again.
+                        <code class="float-end">${error}</code>`, 'danger');
                 })
                 .finally(error => {
                     ui.send_message.disabled = false;
@@ -380,6 +383,11 @@
              * https://stackoverflow.com/a/76140785/1300775
              */
             function set_status(text, cls, clear) {
+                function blink(elm, interval, duration) {
+                    elm.style.visibility = (elm.style.visibility === "hidden" ? "visible" : "hidden");
+                    if (duration > 0) setTimeout(blink, interval, elm, interval, duration - interval);
+                    else elm.style.visibility = "visible";
+                }
                 clear = clear === undefined ? true : clear;
                 cls = cls || 'secondary';
                 if (clear) ui.status.innerHTML = text;
@@ -401,6 +409,7 @@
                         behavior: 'smooth'
                     });
                 }
+                blink(ui.status, 200, 600);
             }
 
             /**

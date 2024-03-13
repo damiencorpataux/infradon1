@@ -65,7 +65,7 @@
                  */
                  static createTable(data, headerMapping) {
                     const tableHTML = `
-                        <table class="table">
+                        <table class="table table-hover table-responsive">
                             <thead>
                                 <tr>
                                     ${Object.values(headerMapping).map(displayField => `<th>${displayField}</th>`).join('')}

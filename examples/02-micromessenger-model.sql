@@ -15,8 +15,13 @@ CREATE TABLE status (
 CREATE TABLE contact (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,  -- TODO: Create a UNIQUE INDEX that is case-insensitive, to refuse storing eg. 'Alice' and 'alice', see: https://stackoverflow.com/questions/4124185/postgresql-unique-indexes-and-string-case
-    --statusline VARCHAR(150),  -- TODO: Add the possibility for a contact to yell statusline !
     status_id INTEGER DEFAULT 1,
+    -- last_seen TIMESTAMP NOT NULL, -- TODO: Replace status_id with this.
+                                     -- Track last active: On INSERT/UPDATE of rel_message, set CURRENT_TIMESTAMP here.
+                                     -- Better: Track last seen: see: https://jonmeyers.io/blog/create-a-select-trigger-in-postgresql/
+                                     --                          and: https://www.postgresql.org/message-id/ik0ioe%24d44%241%40dough.gmane.org
+    --statusline VARCHAR(150),  -- TODO: Add the possibility for a contact to yell a statusline !
+    --active BOOLEAN  -- TODO: If not active, then the contact cannot log in.
     CONSTRAINT status_id FOREIGN KEY(status_id) REFERENCES status(id)
 );
 
@@ -25,7 +30,7 @@ CREATE TABLE rel_message (
     creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     content TEXT NOT NULL,
     contact_id_source INTEGER NOT NULL,
-    contact_id_destination INTEGER NOT NULL,
+    contact_id_destination INTEGER NOT NULL,  -- TODO: Make it possible to send a message to NULL, ie. everyone ?
     CONSTRAINT contact_id_source FOREIGN KEY(contact_id_source) REFERENCES contact(id),
     CONSTRAINT contact_id_destination FOREIGN KEY(contact_id_destination) REFERENCES contact(id)
 );
@@ -80,7 +85,7 @@ CREATE VIEW view_messages AS
 -- Sample data for testing
 INSERT INTO status (name) VALUES ('Online');
 INSERT INTO status (name) VALUES ('Offline');
-INSERT INTO status (name) VALUES ('DND');
+INSERT INTO status (name) VALUES ('Away');
 
 INSERT INTO contact (name, status_id) VALUES ('Alice', 1);
 INSERT INTO contact (name, status_id) VALUES ('Bob', 1);
@@ -91,12 +96,12 @@ INSERT INTO rel_message (contact_id_source, contact_id_destination, content) VAL
 INSERT INTO rel_message (contact_id_source, contact_id_destination, content) VALUES (2, 1, 'Pong !');
 
 
--- Sample queries
-SELECT * FROM contact JOIN status ON contact.status_id = status.id;
+-- -- Sample queries
+-- SELECT * FROM contact JOIN status ON contact.status_id = status.id;
 
-SELECT * FROM contact
-  JOIN status ON contact.status_id = status.id
-  JOIN rel_message ON rel_message.contact_id_source = contact.id;
+-- SELECT * FROM contact
+--   JOIN status ON contact.status_id = status.id
+--   JOIN rel_message ON rel_message.contact_id_source = contact.id;
 
-SELECT * FROM view_contacts;
-SELECT * FROM view_messages;
+-- SELECT * FROM view_contacts;
+-- SELECT * FROM view_messages;

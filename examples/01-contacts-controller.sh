@@ -36,10 +36,7 @@ while true; do
                 http_response_content_type="text/html"
                 ;;
             "GET /api/contacts")
-                sql="SELECT json_agg(to_json(person)) FROM person";
-                ;;
-            "GET /api/contacts/attributes")
-                sql="SELECT json_agg(to_json(view_person_attribute)) FROM view_person_attribute";
+                sql="SELECT * FROM view_person_json";
                 ;;
             "POST /api/contacts/"*)
                 label=$(echo "$http_request_path" | awk -F"/" '\''{print $NF}'\'')

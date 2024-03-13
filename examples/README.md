@@ -23,19 +23,19 @@ Installation (CLI):
 1. Entrer dans le répertoire de l'application
    <br>`cd examples`
 2. Importer la base de données
-   <br>`psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres -a -f 03-goodgrade-model.sql`
+   <br>`psql -v ON_ERROR_STOP=1 -h localhost -U postgres -a -f 03-goodgrade-model.sql`
 3. Démarrer le Service HTTP
    <br>`./03-goodgrade-controller.sh`
 4. Accéder à la Web App
    <br>`open http://localhost:8080/` ouvrir cet url dans un navigateur
    <br>`open 03-goodgrade-view.html` ou alors ouvrir le fichier local avec un navigateur
 
-**Diagramme de composants** de l'architecture de l'application (ici, niveau sommes aux niveau de détail *conceptuel* et *implémentation* mélangés pour avoir une vue globale de ce qui est *important point de vue applicatif* - j'ai donc fait des choix de détail pour chaque élément):
+**Diagramme de composants** de l'architecture de l'application (ici, nous sommes aux niveau de détail *conceptuel* et *implémentation* mélangés pour avoir une vue globale de ce qui est *important point de vue applicatif* - j'ai donc fait des choix de détail pour chaque élément):
 - Client-serveur **Postgres** - pour stocker et fournir les données (*psql*)
-- Client-serveur **HTTP** et **REST** - fournit le JS/HTML au navigateur: la logique applicative et son UI, et fournit les données au format JDON de la part de postgres jusqu'au navigateur (via *netcat*)
+- Client-serveur **HTTP** et **REST** - fournit le JS/HTML au navigateur: la logique applicative et son UI, et fournit les données au format JSON de la part de postgres jusqu'au navigateur (via *netcat*)
 - Client-serveur **DNS**, **DHCP**, etc. - hors scope de notre architecure, ce sont des services omniprésent et fondamentaux car inhérent au fonctionnement d'internet
+- Application: Eh bien c'est l'ensemble des 3 éléments ci-dessus, mis enseble...
 <br><br>![Good Grade architecture](https://raw.githubusercontent.com/wiki/damiencorpataux/infradon1/img/goodgrade-architecture.drawio.png)
-- Application: Eh bien c'est l'ensemble des 3 éléments ci-dessus, mis enseble... ce bullet-point n'a donc rien à faire ici.
 
 Parcourez le chemin entre le *modèle relationnel* (`03-goodgrade-model.sql`) et le *client HTTP* (le navigateur). Il y'a un *service HTTP*, un *service REST*, une communication *client/serveur Postgres* via `psql`... Mais encore ?
 
@@ -77,7 +77,7 @@ A partir de là, on peut démontrer plein de chose en pratique réelle:
 
 - C'est quoi **une App**, même méthode: **on décompose** les étapes, **on les fait à la main** et on justifie l'utilisation de l'outil high-level - mais maintenant **on est conscient de ce qui se passe** dessous, puisque c'est **notre job**
 
-- C'est quoi **la sécurité**: en **termes d'**accès** (là y'en à zero), en terme d'**exploit** eg. *SQL injection* (démontrer comment ca marche: ici pas possible par design, mais il suffit d'*implémenter* dans *Controller* (mon serveur HTTP en bash) un *argument* pour *filtrer les données* et la *clause WHERE* fera une jolie *faille* du *coté SQL* :)
+- C'est quoi **la sécurité**: en termes d'**accès** (là y'en à zero), en terme d'**exploit** eg. *SQL injection* (démontrer comment ca marche: ici pas possible par design, mais il suffit d'*implémenter* dans *Controller* (mon serveur HTTP en bash) un *argument* pour *filtrer les données* et la *clause WHERE* fera une jolie *faille* du *coté SQL* :)
 
 - etc, etc...: J'ai fait une vidéo (pour moi, elle est en unlisted) de ce que j'ai a leur montrer la dessus (je peux la regarder 20 minutes dans le train et me charger neurones pour le cours)
 https://www.youtube.com/watch?v=ZyhKqrJV-Vk
