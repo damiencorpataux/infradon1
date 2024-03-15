@@ -20,6 +20,8 @@ PostgreSQL sous forme de serveur installé en local sur votre machine. Il sert d
 
 Configuration:
 - Port: `5432` (port postgres standard)
+- Mot de passe pour l'utilisateur `postgres`: Le plus simple est d'entrer `postgres` - ca n'est pas sécure mais il n'y a normalement pas de données sensibles dans votre installation locale
+- Logiciels additionnel Stack Builder: Cliquez sur le bouton Cancel
 
 <!--
 Installation du Serveur PostgreSQL (container Docker)
@@ -147,7 +149,7 @@ Il s'agit d'importer le jeu de données fourni dans le répertoire [/data](/data
 
 4. Importer les données dans l'*environnement de production* - quel paramètre change par rapport à l'import dans l'*environnement de développement* ?
 
-[![asciicast](https://asciinema.org/a/EVZs5veCbKuXhTlbAKkONR0EA.svg)](https://asciinema.org/a/EVZs5veCbKuXhTlbAKkONR0EA)
+[![Démonstration](https://asciinema.org/a/EVZs5veCbKuXhTlbAKkONR0EA.svg)](https://asciinema.org/a/EVZs5veCbKuXhTlbAKkONR0EA)
 
 <!-- 
 Notre infrastructure système
