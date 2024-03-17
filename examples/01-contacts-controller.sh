@@ -63,7 +63,7 @@ while true; do
 
         # Excute SQL query, if any $sql
         if [ ! -z "$sql" ]; then
-            echo "  Executing SQL: $sql" >&2
+            echo "$(date) - Executing SQL: $sql" >&2
             http_response_body=$(psql -U postgres contacts -tAc "${sql}");
             http_response_content_type="application/json"
         fi;

@@ -38,6 +38,10 @@ Installation via le shell `bash` ou `zsh` - utilisez votre compte sur `pingouin.
 4. Accéder à la Web App
    <br>`open http://localhost:8080/` ouvrir cet url dans un navigateur
    <br>`open 03-goodgrade-view.html` ou alors ouvrir le fichier local avec un navigateur
+<!-- 
+Il est possible de faire tourner le service HTTP en arrière-plan:
+<br>`nohup ./02-micromessenger-controller.sh > 02-micromessenger.log 2>&1 &`
+ -->
 
 ### Diagramme de composants
 
@@ -84,9 +88,6 @@ https://github.com/damiencorpataux/infradon1/tree/main/examples
 - C'est quoi **une App**, même méthode: **on décompose** les étapes, **on les fait à la main** et on justifie l'utilisation de l'outil high-level - mais maintenant **on est conscient de ce qui se passe** dessous, puisque c'est **notre job**
 
 - C'est quoi **la sécurité**: en termes d'**accès** (là y'en à zero), en terme d'**exploit** eg. *SQL injection* (démontrer comment ca marche: ici pas possible par design, mais il suffit d'*implémenter* dans *Controller* (mon serveur HTTP en bash) un *argument* pour *filtrer les données* et la *clause WHERE* fera une jolie *faille* du *coté SQL* :)
-
-- etc, etc...: J'ai fait une vidéo (pour moi, elle est en unlisted) de ce que j'ai a leur montrer la dessus (je peux la regarder 20 minutes dans le train et me charger neurones pour le cours)
-https://www.youtube.com/watch?v=ZyhKqrJV-Vk
 
 Et on peut imaginer implémenter la même chose avec le Mini Messenger (la db peut gérer la notion de groupe, de read-status, et plein de choses en fait, c'est assez cool aussi)
 
@@ -204,3 +205,10 @@ Choses à expérimenter:
 - Comprenez que l'*implémentation du service HTTP* (le script bash) n'est pas viable en *production*. Elle a l'avantage d'être ultra-simple dans un but pédagogique. Mais elle est aussi très efficace, mesurez le temps que met une réponse avec beaucoup de données (après le flood de messages):
   - `time curl -i localhost:8080/api/messages` - pour 1 requête (faible charge)
   - `while true; do time curl --silent --show-error localhost:8080/api/messages 1>/dev/null; done` - pour n requêtes (grosse charge), notez que le service HTTP n'arrive pas à répondre à toutes les requêtes !
+
+- Essayez de faire une injection SQL...
+  <br>https://www.w3schools.com/sql/sql_injection.asp
+
+- Et pendant qu'on y est, qu'est-ce que ca fait si je me connecte au port `5432` de mon `localhost` avec telnet ?
+  - `telnet localhost 5432`
+  - Parlez-vous le protocole du *service Postgres* ?
