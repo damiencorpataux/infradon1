@@ -398,7 +398,8 @@
                         user_name = matching_contacts[0].name;
                     }
                 }
-                if (!loggedin_user_id) {
+                if (!loggedin_user_id || !user_name) {
+                    loggedin_user_id = null;
                     user_name = 'anonymous';  // Default username for users that are not logged in.
                 }
                 // Update tags in DOM displaying the loggedin user name

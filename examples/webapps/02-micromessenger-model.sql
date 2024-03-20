@@ -15,24 +15,21 @@ CREATE TABLE status (
 CREATE TABLE contact (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,  -- TODO: Create a UNIQUE INDEX that is case-insensitive, to refuse storing eg. 'Alice' and 'alice', see: https://stackoverflow.com/questions/4124185/postgresql-unique-indexes-and-string-case
-    status_id INTEGER DEFAULT 1,
+    status_id INTEGER DEFAULT 1 REFERENCES status(id)
     -- last_seen TIMESTAMP NOT NULL, -- TODO: Replace status_id with this.
                                      -- Track last active: On INSERT/UPDATE of rel_message, set CURRENT_TIMESTAMP here.
                                      -- Better: Track last seen: see: https://jonmeyers.io/blog/create-a-select-trigger-in-postgresql/
                                      --                          and: https://www.postgresql.org/message-id/ik0ioe%24d44%241%40dough.gmane.org
     --statusline VARCHAR(150),  -- TODO: Add the possibility for a contact to yell a statusline !
     --active BOOLEAN  -- TODO: If not active, then the contact cannot log in.
-    CONSTRAINT status_id FOREIGN KEY(status_id) REFERENCES status(id)
 );
 
 CREATE TABLE rel_message (
     id SERIAL PRIMARY KEY,
     creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     content TEXT NOT NULL,
-    contact_id_source INTEGER NOT NULL,
-    contact_id_destination INTEGER NOT NULL,  -- TODO: Make it possible to send a message to NULL, ie. everyone ?
-    CONSTRAINT contact_id_source FOREIGN KEY(contact_id_source) REFERENCES contact(id),
-    CONSTRAINT contact_id_destination FOREIGN KEY(contact_id_destination) REFERENCES contact(id)
+    contact_id_source INTEGER NOT NULL REFERENCES contact(id),
+    contact_id_destination INTEGER NOT NULL REFERENCES contact(id)  -- TODO: Make it possible to send a message to NULL, ie. everyone ?
 );
 
 -- Iteration 2: Add group managment
@@ -40,16 +37,13 @@ CREATE TABLE rel_message (
 --     id SERIAL PRIMARY KEY,
 --     name TEXT NOT NULL UNIQUE
 --     creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
---     owner_contact_id INTEGER NOT NULL,
---     CONSTRAINT owner_contact_id FOREIGN KEY(owner_contact_id) REFERENCES contact(id)
+--     owner_contact_id INTEGER NOT NULL  REFERENCES contact(id)
 -- );
 
 -- CREATE TABLE rel_group_contacts (
 --     id SERIAL PRIMARY KEY,
---     group_id INTEGER NOT NULL,
---     contact_id INTEGER NOT NULL,
---     CONSTRAINT group_id FOREIGN KEY(group_id) REFERENCES group(id),
---     CONSTRAINT contact_id FOREIGN KEY(contact_id) REFERENCES contact(id)
+--     group_id INTEGER NOT NULL REFERENCES group(id),
+--     contact_id INTEGER NOT NULL REFERENCES contact(id),
 -- );
 
 -- Iteration 3: Add message status managment
