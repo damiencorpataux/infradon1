@@ -29,7 +29,7 @@ while ($listener.IsListening) {
         # Route HTTP Request
         switch -Regex ($http_request_method + " " + $http_request_path) {
             "GET /" {
-                $http_response_body = Get-Content "$script_dir/02-micromessenger-view.html" -Raw
+                $http_response_body = Get-Content "$script_dir/view.html" -Raw
                 $http_response_content_type = "text/html"
             }
             "GET /api/contacts" {

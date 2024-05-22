@@ -32,7 +32,7 @@ while true; do
         # Route HTTP Request
         case "$http_request_method $http_request_path" in
             "GET /")
-                http_response_body=$(cat "$script_dir/01-contacts-view.html")  # Return a static HTML file
+                http_response_body=$(cat "$script_dir/view.html")  # Return a static HTML file
                 http_response_content_type="text/html"
                 ;;
             "GET /api/contacts")

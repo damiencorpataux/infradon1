@@ -27,7 +27,7 @@ while true; do
 
         # Route HTTP Request
         if [ "$http_request_path" = "/" ]; then
-            echo "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n$(cat $script_dir/03-goodgrade-view.html)"  # Return a static HTML file
+            echo "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n$(cat $script_dir/view.html)"  # Return a static HTML file
         else
             case "$http_request_path" in
                 "/api/grades")

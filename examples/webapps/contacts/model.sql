@@ -16,6 +16,8 @@ CREATE TABLE relationship (
     name TEXT NOT NULL
 );
 
+
+
 CREATE TABLE person (
     id SERIAL PRIMARY KEY,
     creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

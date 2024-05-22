@@ -26,6 +26,7 @@ Votre application de gestion de notes avec calcul des moyenne par note, par modu
 
 Cette application démontre un use-case minimaliste d'architecture client-serveur multi-tiers (la DB, l'API, le Navigateur, les services internet de base comme DNS ou DHCP, ...).
 
+
 ### Installation (CLI):
 
 Installation via le shell `bash` ou `zsh` - utilisez votre compte sur `pingouin.heig-vd.ch` si nécessaire:
